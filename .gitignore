@@ -1,0 +1,13 @@
+data.db
+
+# environment
+.venv/
+
+# NiceGUI Data
+.nicegui/
+
+# Byte-compiled / optimized / DLL files
+__pycache__/
+
+# C extensions
+*.so
