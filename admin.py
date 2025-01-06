@@ -2,7 +2,7 @@
 Author: 于小丘 海枫
 Date: 2024-10-02 15:23:34
 LastEditors: Yuerchu admin@yuxiaoqiu.cn
-LastEditTime: 2024-11-29 20:43:28
+LastEditTime: 2024-12-14 20:03:49
 FilePath: /Findreve/admin.py
 Description: Findreve 后台管理 admin
 
@@ -12,12 +12,18 @@ Copyright (c) 2018-2024 by 于小丘Yuerchu, All Rights Reserved.
 from nicegui import ui, app
 from typing import Optional
 from typing import Dict
+import traceback
 import model
+import asyncio
 import qrcode
 import base64
 from io import BytesIO
+from PIL import Image
 from fastapi import Request
+import json
+import requests
 from tool import *
+from fastapi.responses import RedirectResponse
 
 
 def create(unitTest: bool = False):
@@ -39,13 +45,23 @@ def create(unitTest: bool = False):
                 ui.button(icon='menu', on_click=lambda: left_drawer.toggle()).props('flat color=white round')
                 ui.button(text="Findreve 仪表盘" if not unitTest else 'Findreve 仪表盘 单测模式').classes('text-lg').props('flat color=white no-caps')
         
+        siteDomain = request.base_url.hostname
         with ui.left_drawer() as left_drawer:
             ui.image('https://bing.img.run/1366x768.php').classes('w-full')
             with ui.row(align_items='center').classes('w-full'):
                 ui.label('Findreve').classes('text-2xl text-bold')
                 ui.chip('Pro').classes('text-xs -left-3').props('floating outline')
-            ui.label("本地模式无需授权").classes('text-gray-600 -mt-3')
+            if siteDomain == "127.0.0.1" or siteDomain == "localhost":
+                ui.label("本地模式无需授权").classes('text-gray-600 -mt-3')
+            elif not await model.Database().get_setting('License'):
+                ui.label("未授权，请立即前往授权").classes('text-red-600 -mt-3')
+            elif await model.Database().get_setting('License'):
+                ui.label("正版授权，希望是一万年").classes('text-green-600 -mt-3')
+            else:
+                ui.label("授权异常，请联系作者").classes('text-red-600 -mt-3')
 
+            ui.button('首页 & 信息', icon='fingerprint', on_click=lambda: tabs.set_value('main_page')) \
+                .classes('w-full').props('flat no-caps')
             ui.button('物品 & 库存', icon='settings', on_click=lambda: tabs.set_value('item')) \
                 .classes('w-full').props('flat no-caps')
             ui.button('产品 & 授权', icon='settings', on_click=lambda: tabs.set_value('auth')) \
@@ -53,11 +69,42 @@ def create(unitTest: bool = False):
             ui.button('关于 & 反馈', icon='settings', on_click=lambda: tabs.set_value('about')) \
                 .classes('w-full').props('flat no-caps')
         
-        with ui.tab_panels(tabs, value='item').classes('w-full').props('vertical'):
+        with ui.tab_panels(tabs, value='main_page').classes('w-full').props('vertical'):
+                # 站点一览
+                with ui.tab_panel('main_page'):
+                    ui.label('首页配置').classes('text-2xl text-bold')
+                    ui.label('暂不支持，请直接修改main_page.py').classes('text-md text-gray-600').classes('w-full')
 
                 # 物品一览
                 with ui.tab_panel('item'):
-                    
+
+                    # 列表选择函数
+                    async def objectTableOnClick():
+                        try:
+                            status = str(object_table.selected[0]['status'])
+                        except:
+                            # 当物品列表未选中，显示添加物品按钮，其他按钮不显示
+                            addObjectFAB.set_visibility(True)
+                            lostObjectFAB.set_visibility(False)
+                            findObjectFAB.set_visibility(False)
+                            return
+                        
+                        if status == "正常":
+                            # 选中正常物品，显示丢失按钮
+                            addObjectFAB.set_visibility(False)
+                            lostObjectFAB.set_visibility(True)
+                            findObjectFAB.set_visibility(False)
+                        elif status == "丢失":
+                            # 选中丢失物品，显示发现按钮
+                            addObjectFAB.set_visibility(False)
+                            lostObjectFAB.set_visibility(False)
+                            findObjectFAB.set_visibility(True)
+                        else:
+                            # 选中其他状态，隐藏所有按钮
+                            addObjectFAB.set_visibility(False)
+                            lostObjectFAB.set_visibility(False)
+                            findObjectFAB.set_visibility(False)
+
                     # 添加物品
                     async def addObject():
                         dialogAddObjectIcon.disable()
@@ -146,10 +193,85 @@ def create(unitTest: bool = False):
                         ui.button("返回", on_click=addObjectDialog.close) \
                                 .classes('w-full').props('flat rounded')
                     
-                    async def reloadTable(tips: bool = True):
+                    async def lostObject():
+                        try:
+                            # 获取选中物品
+                            object_id = object_table.selected[0]['id']
+                            await model.Database().update_object(id=object_id, status='lost')
+                            # 如果设置了留言，则更新留言
+                            if lostReason.value != "":
+                                await model.Database().update_object(id=object_id, context=lostReason.value)
+                                await model.Database().update_object(id=object_id, lost_at=datetime.now())
+                        except Exception as e:
+                            ui.notify(str(e), color='negative')
+                        else:
+                            ui.notify('设置丢失成功', color='positive')
+                            # 刷新表格
+                            await reloadTable(tips=False)
+                            lostObjectDialog.close()
+                            # 将FAB设置为正常
+                            addObjectFAB.set_visibility(True)
+                            lostObjectFAB.set_visibility(False)
+                            findObjectFAB.set_visibility(False)
+
+
+                    # 设置物品丢失对话框
+                    with ui.dialog() as lostObjectDialog, ui.card().style('width: 90%; max-width: 500px'):
+                        ui.button(icon='gpp_bad', color='red').props('outline round').classes('mx-auto w-auto shadow-sm w-fill')
+                        ui.label('设置物品丢失').classes('w-full text-h5 text-center')
+                        
+                        ui.label('确定要设置这个物品为丢失吗？')
+                        ui.html('设置为丢失以后，<b>你的电话号码将会被完整地显示在物品页面</b>(不是“*** **** 8888”而是“188 8888 8888”)，以供拾到者能够记下你的电话号码。此外，在页面底部将会显示一个按钮，这个按钮能够一键拨打预先设置好的电话。')
+                        lostReason = ui.input('物主留言') \
+                            .classes('block w-full text-gray-900')
+                        lostReasonTips = ui.label('非必填，但建议填写，以方便拾到者联系你').classes('-mt-3')
+
+                        async def handle_lost_object():
+                            await lostObject()
+
+                        ui.button("确认提交", color='red', on_click=handle_lost_object) \
+                            .classes('items-center w-full').props('rounded')
+                        ui.button("返回", on_click=lostObjectDialog.close) \
+                            .classes('w-full').props('flat rounded')
+                    
+                    async def findObject():
+                        try:
+                            object_id = object_table.selected[0]['id']
+                            await model.Database().update_object(id=object_id, status='ok')
+                            await model.Database().update_object(id=object_id, context=None)
+                            await model.Database().update_object(id=object_id, find_ip=None)
+                            await model.Database().update_object(id=object_id, lost_at=None)
+                        except Exception as e:
+                            ui.notify(str(e), color='negative')
+                        else:
+                            ui.notify('解除丢失成功', color='positive')
+                            # 刷新表格
+                            await reloadTable(tips=False)
+                            findObjectDialog.close()
+                            # 将FAB设置为正常
+                            addObjectFAB.set_visibility(True)
+                            lostObjectFAB.set_visibility(False)
+                            findObjectFAB.set_visibility(False)
+
+                    # 解除丢失对话框
+                    with ui.dialog() as findObjectDialog, ui.card().style('width: 90%; max-width: 500px'):
+                        ui.button(icon='remove_moderator').props('outline round').classes('mx-auto w-auto shadow-sm w-fill')
+                        ui.label('解除丢失').classes('w-full text-h5 text-center')
+                        
+                        ui.label('确定物品已经找回了吗？')
+
+                        async def handle_find_object():
+                            await findObject()
+
+                        ui.button("确认提交", on_click=handle_find_object) \
+                            .classes('items-center w-full').props('rounded')
+                        ui.button("返回") \
+                            .classes('w-full').props('flat rounded')
+                    
+                    async def fetch_and_process_objects():
                         # 获取所有物品
                         objects = [dict(zip(['id', 'key', 'name', 'icon', 'status', 'phone', 'context',
-                                            'find_ip', 'create_at', 'lost_at'], obj)) for obj in await model.Database().get_object()]
+                                             'find_ip', 'create_at', 'lost_at'], obj)) for obj in await model.Database().get_object()]
                         status_map = {'ok': '正常', 'lost': '丢失'}
                         for obj in objects:
                             obj['status'] = status_map.get(obj['status'], obj['status'])
@@ -157,36 +279,45 @@ def create(unitTest: bool = False):
                                 obj['create_at'] = format_time_diff(obj['create_at'])
                             if obj['lost_at']:
                                 obj['lost_at'] = format_time_diff(obj['lost_at'])
+                        return objects
+
+                    async def reloadTable(tips: bool = True):
+                        objects = await fetch_and_process_objects()
                         object_table.update_rows(objects)
                         if tips:
                             ui.notify('刷新成功')
 
-                    # 获取所有物品
-                    objects = [dict(zip(['id', 'key', 'name', 'icon', 'status', 'phone', 'context',
-                                         'find_ip', 'create_at', 'lost_at'], obj)) for obj in await model.Database().get_object()]
-                    status_map = {'ok': '正常', 'lost': '丢失'}
-                    for obj in objects:
-                        obj['status'] = status_map.get(obj['status'], obj['status'])
-                        if obj['create_at']:
-                            obj['create_at'] = format_time_diff(obj['create_at'])
-                        if obj['lost_at']:
-                            obj['lost_at'] = format_time_diff(obj['lost_at'])
-                    object_columns=[
-                            {'name': 'id', 'label': '内部ID', 'field': 'id', 'required': True, 'align': 'left'},
-                            {'name': 'key', 'label': '物品Key', 'field': 'key', 'required': True, 'align': 'left'},
-                            {'name': 'name', 'label': '物品名称', 'field': 'name', 'required': True, 'align': 'left'},
-                            {'name': 'icon', 'label': '物品图标', 'field': 'icon', 'required': True, 'align': 'left'},
-                            {'name': 'phone', 'label': '物品绑定手机', 'field': 'phone', 'required': True, 'align': 'left'},
-                            {'name': 'create_at', 'label': '物品创建时间', 'field': 'create_at', 'required': True, 'align': 'left'}
-                            ]
+                    object_columns = [
+                        {'name': 'id', 'label': '内部ID', 'field': 'id', 'required': True, 'align': 'left'},
+                        {'name': 'key', 'label': '物品Key', 'field': 'key', 'required': True, 'align': 'left'},
+                        {'name': 'name', 'label': '物品名称', 'field': 'name', 'required': True, 'align': 'left'},
+                        {'name': 'icon', 'label': '物品图标', 'field': 'icon', 'required': True, 'align': 'left'},
+                        {'name': 'status', 'label': '物品状态', 'field': 'status', 'required': True, 'align': 'left'},
+                        {'name': 'phone', 'label': '物品绑定手机', 'field': 'phone', 'required': True, 'align': 'left'},
+                        {'name': 'context', 'label': '丢失描述', 'field': 'context', 'required': True, 'align': 'left'},
+                        {'name': 'find_ip', 'label': '物品发现IP', 'field': 'find_ip', 'required': True, 'align': 'left'},
+                        {'name': 'create_at', 'label': '物品创建时间', 'field': 'create_at', 'required': True, 'align': 'left'},
+                        {'name': 'lost_at', 'label': '物品丢失时间', 'field': 'lost_at', 'required': True, 'align': 'left'}
+                    ]
+
+                    objects = await fetch_and_process_objects()
                     object_table = ui.table(
                         title='物品 & 库存',
                         row_key='id',
                         pagination=10,
                         selection='single',
                         columns=object_columns,
-                        rows=objects
+                        rows=objects,
+                        on_select=lambda: objectTableOnClick()
                     ).classes('w-full').props('flat')
+
+                    object_table.add_slot('body-cell-status', '''
+                        <q-td key="status" :props="props">
+                            <q-badge :color="props.value === '正常' ? 'green' : 'red'">
+                                {{ props.value }}
+                            </q-badge>
+                        </q-td>
+                    ''')
 
 
                     with object_table.add_slot('top-right'):
@@ -206,6 +337,16 @@ def create(unitTest: bool = False):
                     with ui.page_sticky(x_offset=24, y_offset=24) as addObjectFAB:
                         ui.button(icon='add', on_click=addObjectDialog.open) \
                             .props('fab')
+                    with ui.page_sticky(x_offset=24, y_offset=24) as lostObjectFAB:
+                        ui.button(icon='gpp_bad', color='red', on_click=lostObjectDialog.open) \
+                            .props('fab')
+                        # 单独拉出来默认隐藏，防止无法再设置其显示
+                    lostObjectFAB.set_visibility(False)
+                    with ui.page_sticky(x_offset=24, y_offset=24) as findObjectFAB:
+                        ui.button(icon='remove_moderator', on_click=findObjectDialog.open) \
+                            .props('fab')
+                        # 单独拉出来默认隐藏，防止无法再设置其显示
+                    findObjectFAB.set_visibility(False)
                 
                 # Findreve 授权
                 with ui.tab_panel('auth'):
@@ -231,9 +372,10 @@ def create(unitTest: bool = False):
                 
                 # 关于 Findreve
                 with ui.tab_panel('about'):
-                    ui.label('关于 Findreve').classes('text-2xl text-bold')
+                    ui.label('关于 Findreve')
 
-                    ui.label('还在做')
+
+
 
 if __name__ in {"__main__", "__mp_main__"}:
     create(unitTest=True)
