@@ -17,8 +17,8 @@ import model
 import tool
 from fastapi.responses import RedirectResponse
 
-def create(unitTest: bool = False) -> Optional[RedirectResponse]:
-    @ui.page('/login' if not unitTest else '/')
+def create() -> Optional[RedirectResponse]:
+    @ui.page('/login')
     async def session():
         # 检测是否已登录
         if app.storage.user.get('authenticated', False):
@@ -71,14 +71,5 @@ def create(unitTest: bool = False) -> Optional[RedirectResponse]:
             ui.button('登录', on_click=lambda: login()).classes('items-center w-full').props('rounded')
 
 
-if __name__ in {"__main__", "__mp_main__"}:
-    create(unitTest=True)
-    ui.run(
-        host='0.0.0.0',
-        favicon='🚀',
-        port=8080,
-        title='Findreve',
-        native=False,
-        storage_secret='findreve',
-        language='zh-CN',
-        fastapi_docs=False)
+if __name__ not in {"__main__", "__mp_main__"}:
+    raise Exception('不支持单测模式，请从main.py启动')
