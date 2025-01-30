@@ -148,3 +148,8 @@ def create() -> None:
                     ui.space()
                     ui.button(icon='open_in_new', on_click=lambda: (ui.navigate.to('https://music.163.com/#/song?id=1863630345'))).props('flat fab-mini')
                 ui.label('耗时6个月完成的年度纯音乐').classes('text-sm -mt-3')
+
+if __name__ not in {"__main__", "__mp_main__"}:
+    raise Exception('不支持单测模式，请从main.py启动')
+
+
