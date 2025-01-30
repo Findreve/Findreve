@@ -26,8 +26,8 @@ from tool import *
 from fastapi.responses import RedirectResponse
 
 
-def create(unitTest: bool = False):
-    @ui.page('/admin' if not unitTest else '/')
+def create():
+    @ui.page('/admin')
     async def admin(request: Request):
 
         dark_mode = ui.dark_mode(value=True)
@@ -43,7 +43,7 @@ def create(unitTest: bool = False):
         .style('box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1)'):
             with ui.tabs(value='main_page') as tabs:
                 ui.button(icon='menu', on_click=lambda: left_drawer.toggle()).props('flat color=white round')
-                ui.button(text="Findreve 仪表盘" if not unitTest else 'Findreve 仪表盘 单测模式').classes('text-lg').props('flat color=white no-caps')
+                ui.button(text="Findreve 仪表盘").classes('text-lg').props('flat color=white no-caps')
         
         siteDomain = request.base_url.hostname
         with ui.left_drawer() as left_drawer:
@@ -377,14 +377,5 @@ def create(unitTest: bool = False):
 
 
 
-if __name__ in {"__main__", "__mp_main__"}:
-    create(unitTest=True)
-    ui.run(
-        host='0.0.0.0',
-        favicon='🚀',
-        port=8080,
-        title='Findreve',
-        native=False,
-        storage_secret='findreve',
-        language='zh-CN',
-        fastapi_docs=False)
+if __name__ not in {"__main__", "__mp_main__"}:
+    raise Exception('不支持单测模式，请从main.py启动')
