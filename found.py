@@ -79,3 +79,6 @@ def create() -> None:
         loading.close()
         loading.clear()
         return
+
+if __name__ not in {"__main__", "__mp_main__"}:
+    raise Exception('不支持单测模式，请从main.py启动')
