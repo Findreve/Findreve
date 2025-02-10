@@ -38,6 +38,3 @@ def create() -> None:
                 ui.button('返回首页', 
                           on_click=lambda: ui.navigate.to('/')) \
                     .classes('items-center w-full').props('rounded')
-
-if __name__ not in {"__main__", "__mp_main__"}:
-    raise Exception('不支持单测模式，请从main.py启动')

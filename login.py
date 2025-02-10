@@ -54,7 +54,7 @@ def create() -> Optional[RedirectResponse]:
             .style('box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1)'):
 
             ui.button(icon='menu').props('flat color=white round')
-            appBar_appName = ui.button(text="HeyPress" if not unitTest else 'HeyPress 单测模式').classes('text-lg').props('flat color=white no-caps')
+            appBar_appName = ui.button(text="HeyPress").classes('text-lg').props('flat color=white no-caps')
 
         # 创建一个绝对中心的登录卡片
         with ui.card().classes('absolute-center round-lg').style('width: 70%; max-width: 500px'):
@@ -69,7 +69,3 @@ def create() -> Optional[RedirectResponse]:
             
             # 按钮布局
             ui.button('登录', on_click=lambda: login()).classes('items-center w-full').props('rounded')
-
-
-if __name__ not in {"__main__", "__mp_main__"}:
-    raise Exception('不支持单测模式，请从main.py启动')

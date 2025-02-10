@@ -24,6 +24,7 @@ import json
 import requests
 from tool import *
 from fastapi.responses import RedirectResponse
+from datetime import datetime
 
 
 def create():
@@ -47,18 +48,14 @@ def create():
         
         siteDomain = request.base_url.hostname
         with ui.left_drawer() as left_drawer:
-            ui.image('https://bing.img.run/1366x768.php').classes('w-full')
+            with ui.column().classes('w-full'):
+                ui.image('/static/Findreve.png').classes('w-1/2 mx-auto')
             with ui.row(align_items='center').classes('w-full'):
                 ui.label('Findreve').classes('text-2xl text-bold')
-                ui.chip('Pro').classes('text-xs -left-3').props('floating outline')
             if siteDomain == "127.0.0.1" or siteDomain == "localhost":
                 ui.label("本地模式无需授权").classes('text-gray-600 -mt-3')
-            elif not await model.Database().get_setting('License'):
-                ui.label("未授权，请立即前往授权").classes('text-red-600 -mt-3')
-            elif await model.Database().get_setting('License'):
-                ui.label("正版授权，希望是一万年").classes('text-green-600 -mt-3')
             else:
-                ui.label("授权异常，请联系作者").classes('text-red-600 -mt-3')
+                ui.label("免费版，无需授权").classes('text-red-600 -mt-3')
 
             ui.button('首页 & 信息', icon='fingerprint', on_click=lambda: tabs.set_value('main_page')) \
                 .classes('w-full').props('flat no-caps')
@@ -198,10 +195,10 @@ def create():
                             # 获取选中物品
                             object_id = object_table.selected[0]['id']
                             await model.Database().update_object(id=object_id, status='lost')
+                            await model.Database().update_object(id=object_id, lost_at=datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
                             # 如果设置了留言，则更新留言
                             if lostReason.value != "":
                                 await model.Database().update_object(id=object_id, context=lostReason.value)
-                                await model.Database().update_object(id=object_id, lost_at=datetime.now())
                         except Exception as e:
                             ui.notify(str(e), color='negative')
                         else:
@@ -373,9 +370,3 @@ def create():
                 # 关于 Findreve
                 with ui.tab_panel('about'):
                     ui.label('关于 Findreve')
-
-
-
-
-if __name__ not in {"__main__", "__mp_main__"}:
-    raise Exception('不支持单测模式，请从main.py启动')

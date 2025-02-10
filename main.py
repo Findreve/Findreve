@@ -70,6 +70,9 @@ class AuthMiddleware(BaseHTTPMiddleware):
 # 添加中间件 Add middleware
 app.add_middleware(AuthMiddleware)
 
+# 添加静态文件目录
+app.add_static_files(url_path='/static', local_directory='static')
+
 # 启动函数 Startup function
 def startup():
     asyncio.run(model.Database().init_db())
