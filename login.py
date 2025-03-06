@@ -19,16 +19,16 @@ from fastapi.responses import RedirectResponse
 
 def create() -> Optional[RedirectResponse]:
     @ui.page('/login')
-    async def session():
+    async def session(redirect_to: str = '/'):
         # 检测是否已登录
         if app.storage.user.get('authenticated', False):
-            return ui.navigate.to('/admin')
+            ui.navigate.to(redirect_to)
         
         ui.page_title('登录 Findreve')
         async def try_login() -> None:
             app.storage.user.update({'authenticated': True})
             # 跳转到用户上一页
-            ui.navigate.to(app.storage.user.get('referrer_path', '/'))
+            ui.navigate.to(redirect_to)
 
         async def login():
             if username.value == "" or password.value == "":
@@ -46,7 +46,7 @@ def create() -> Optional[RedirectResponse]:
             # 存储用户信息
             app.storage.user.update({'authenticated': True})
             # 跳转到用户上一页
-            ui.navigate.to(app.storage.user.get('referrer_path', '/'))
+            ui.navigate.to(redirect_to)
             
         
         with ui.header() \
