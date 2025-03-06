@@ -47,14 +47,14 @@ class AuthMiddleware(BaseHTTPMiddleware):
             logging.info(f"访问路径: {request.url.path},"
                          f"认证状态: {app.storage.user.get('authenticated')}")
             if not app.storage.user.get('authenticated', False):
-                # 如果请求的路径在Client.page_routes.values()中，并且不在unrestricted_page_routes中
-                if request.url.path in Client.page_routes.values() \
+                # 如果请求的路径不是nicegui的静态文件，并且不在unrestricted_page_routes中
+                if not request.url.path.startwith('/_nicegui') \
                 and request.url.path in AUTH_CONFIG["restricted_routes"]:
                     logging.warning(f"未认证用户尝试访问: {request.url.path}")
                     # 记录用户想访问的路径 Record the user's intended path
                     app.storage.user['referrer_path'] = request.url.path
                     # 重定向到登录页面 Redirect to the login page
-                    return RedirectResponse(AUTH_CONFIG["login_url"])
+                    return RedirectResponse(f'/login?redirect_to={request.url.path}')
             # 否则，继续处理请求 Otherwise, continue processing the request
             return await call_next(request)
 
