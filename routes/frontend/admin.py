@@ -16,6 +16,7 @@ import qrcode
 import base64
 from io import BytesIO
 from fastapi import Request
+import model.database
 from tool import *
 from datetime import datetime
 
@@ -112,7 +113,7 @@ def create():
                             object_key.set_value(generate_password())
                         
                         try:
-                            await model.Database().add_object(key=object_key.value, name=object_name.value, icon=object_icon.value, phone=object_phone.value)
+                            await model.database.Database().add_object(key=object_key.value, name=object_name.value, icon=object_icon.value, phone=object_phone.value)
                         except ValueError as e:
                             ui.notify(str(e), color='negative')
                         else:
@@ -187,11 +188,11 @@ def create():
                         try:
                             # 获取选中物品
                             object_id = object_table.selected[0]['id']
-                            await model.Database().update_object(id=object_id, status='lost')
-                            await model.Database().update_object(id=object_id, lost_at=datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
+                            await model.database.Database().update_object(id=object_id, status='lost')
+                            await model.database.Database().update_object(id=object_id, lost_at=datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
                             # 如果设置了留言，则更新留言
                             if lostReason.value != "":
-                                await model.Database().update_object(id=object_id, context=lostReason.value)
+                                await model.database.Database().update_object(id=object_id, context=lostReason.value)
                         except Exception as e:
                             ui.notify(str(e), color='negative')
                         else:
@@ -227,10 +228,10 @@ def create():
                     async def findObject():
                         try:
                             object_id = object_table.selected[0]['id']
-                            await model.Database().update_object(id=object_id, status='ok')
-                            await model.Database().update_object(id=object_id, context=None)
-                            await model.Database().update_object(id=object_id, find_ip=None)
-                            await model.Database().update_object(id=object_id, lost_at=None)
+                            await model.database.Database().update_object(id=object_id, status='ok')
+                            await model.database.Database().update_object(id=object_id, context=None)
+                            await model.database.Database().update_object(id=object_id, find_ip=None)
+                            await model.database.Database().update_object(id=object_id, lost_at=None)
                         except Exception as e:
                             ui.notify(str(e), color='negative')
                         else:
@@ -261,7 +262,7 @@ def create():
                     async def fetch_and_process_objects():
                         # 获取所有物品
                         objects = [dict(zip(['id', 'key', 'name', 'icon', 'status', 'phone', 'context',
-                                             'find_ip', 'create_at', 'lost_at'], obj)) for obj in await model.Database().get_object()]
+                                             'find_ip', 'create_at', 'lost_at'], obj)) for obj in await model.database.Database().get_object()]
                         status_map = {'ok': '正常', 'lost': '丢失'}
                         for obj in objects:
                             obj['status'] = status_map.get(obj['status'], obj['status'])

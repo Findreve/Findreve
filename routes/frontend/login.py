@@ -11,17 +11,46 @@ Copyright (c) 2018-2024 by 于小丘Yuerchu, All Rights Reserved.
 
 from nicegui import ui, app
 from typing import Optional
-import model
-import tool
 from fastapi.responses import RedirectResponse
 from fastapi import Request
 
 def create() -> Optional[RedirectResponse]:
     @ui.page('/login')
     async def session(request: Request, redirect_to: str = "/"):
-        # 检测是否已登录
-        if app.storage.user.get('authenticated', False):
-            return ui.navigate.to(redirect_to)
+        ui.add_head_html("""
+            <script>
+                async function login(username, password) {
+                    const url = '/api/token';
+                    const data = new URLSearchParams();
+                    data.append('username', username);
+                    data.append('password', password);
+
+                try {
+                    const response = await fetch(url, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/x-www-form-urlencoded',
+                        },
+                        body: data,
+                    });
+
+                    if (!response.ok) {
+                        throw new Error('Invalid username or password');
+                    }
+
+                    const result = await response.json();
+
+                    // 处理登录成功后的数据，返回access_token
+                    localStorage.setItem('access_token', result.access_token);
+
+                    return {'status': 'success'};
+
+                } catch (error) {
+                    return {'status': 'failed', 'detail': error.message};
+                }
+            }
+            </script>
+            """)
         
         ui.page_title('登录 Findreve')
         async def try_login() -> None:
@@ -34,18 +63,14 @@ def create() -> Optional[RedirectResponse]:
                 ui.notify('账号或密码不能为空', color='negative')
                 return
             
-            # 验证账号和密码
-            account = await model.Database().get_setting('account')
-            stored_password = await model.Database().get_setting('password')
-
-            if account != username.value or not tool.verify_password(stored_password, password.value, debug=True):
-                ui.notify('账号或密码错误', color='negative')
-                return
-            
-            # 存储用户信息
-            app.storage.user.update({'authenticated': True})
-            # 跳转到用户上一页
-            ui.navigate.to(redirect_to)
+            try:
+                result = await ui.run_javascript(f"login('{username}', '{password}')")
+                if result['status'] == 'success':
+                    ui.navigate.to(redirect_to)
+                else:
+                    ui.notify("账号或密码错误", type="negative")
+            except Exception as e:
+                ui.notify(f"登录失败: {str(e)}", type="negative")
             
         
         with ui.header() \
@@ -59,12 +84,12 @@ def create() -> Optional[RedirectResponse]:
         with ui.card().classes('absolute-center round-lg').style('width: 70%; max-width: 500px'):
             # 登录标签
             ui.button(icon='lock').props('outline round').classes('mx-auto w-auto shadow-sm w-fill')
-            ui.label('登录 HeyPress').classes('text-h5 w-full text-center')
+            ui.label('登录 Findreve').classes('text-h5 w-full text-center')
             # 用户名/密码框
             username = ui.input('账号').on('keydown.enter', try_login) \
-                .classes('block w-full text-gray-900').props('rounded outlined')
+                .classes('block w-full text-gray-900').props('filled')
             password = ui.input('密码', password=True, password_toggle_button=True) \
-                .on('keydown.enter', try_login).classes('block w-full text-gray-900').props('rounded outlined')
+                .on('keydown.enter', try_login).classes('block w-full text-gray-900').props('filled')
             
             # 按钮布局
             ui.button('登录', on_click=lambda: login()).classes('items-center w-full').props('rounded')

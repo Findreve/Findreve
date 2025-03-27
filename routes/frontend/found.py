@@ -11,7 +11,7 @@ Copyright (c) 2018-2024 by 于小丘Yuerchu, All Rights Reserved.
 
 from nicegui import ui
 from fastapi import Request
-from model import Database
+from model.database import Database
 from tool import format_phone
 
 def create() -> None:

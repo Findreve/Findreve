@@ -90,6 +90,15 @@ class Database:
                     logging.info("插入初始密码信息")
                     print(f"密码（请牢记，后续不再显示）: {password}")
             
+            async with db.execute("SELECT name FROM fr_settings WHERE name = 'SECRET_KEY'") as cursor:
+                if not await cursor.fetchone():
+                    secret_key = tool.generate_password(64)
+                    await db.execute(
+                        "INSERT INTO fr_settings (type, name, value) VALUES (?, ?, ?)",
+                        ('string', 'SECRET_KEY', secret_key)
+                    )
+                    logging.info("插入初始密钥信息")
+            
             await db.commit()
             logging.info("数据库初始化完成并提交更改")
     
@@ -118,7 +127,6 @@ class Database:
         """更新对象信息
         
         :param id: 对象ID
-        :param key: 序列号
         :param kwargs: 更新字段
         """
         set_values = ", ".join([f"{k} = ?" for k in kwargs.keys()])
@@ -146,6 +154,15 @@ class Database:
             else:
                 async with db.execute("SELECT * FROM fr_objects") as cursor:
                     return await cursor.fetchall()
+    
+    async def delete_object(self, id: int):
+        """删除对象
+        
+        :param id: 对象ID
+        """
+        async with aiosqlite.connect(self.db_path) as db:
+            await db.execute("DELETE FROM fr_objects WHERE id = ?", (id,))
+            await db.commit()
     
     async def set_setting(self, name: str, value: str):
         """设置配置项

@@ -9,8 +9,6 @@ Description: Findreve 小工具 tool
 Copyright (c) 2018-2024 by 于小丘Yuerchu, All Rights Reserved. 
 '''
 
-import string
-import random
 import hashlib
 import binascii
 import logging
@@ -44,11 +42,17 @@ def format_phone(phone: str, groups: list = None, separator: str = " ", private:
     return separator.join(result)
 
 def generate_password(length: int = 8) -> str:
-    # 定义密码字符集，大小写字母和数字
-    characters = string.ascii_letters + string.digits
-    # 随机选择length个字符，生成密码
-    password = ''.join(random.choice(characters) for i in range(length))
-    return password
+    """
+    生成指定长度的随机密码。
+    
+    :param length: 密码长度
+    :type length: int
+    :return: 随机密码
+    :rtype: str
+    """
+    import secrets
+    
+    return secrets.token_hex(length)
 
 def hash_password(password: str) -> str:
     """
