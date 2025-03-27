@@ -1,4 +1,5 @@
-data.db
+# DataBase
+*.db
 
 # environment
 .venv/
@@ -9,5 +10,5 @@ data.db
 # Byte-compiled / optimized / DLL files
 __pycache__/
 
-# C extensions
-*.so
+# VsCodeCounter Data
+.VSCodeCounter/

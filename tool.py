@@ -14,12 +14,7 @@ import random
 import hashlib
 import binascii
 import logging
-import qrcode
-from typing import Optional
-from io import BytesIO
-from pathlib import Path
-import base64
-from datetime import datetime, timezone, timedelta
+from datetime import datetime, timezone
 import os
 
 def format_phone(phone: str, groups: list = None, separator: str = " ", private: bool = False) -> str:

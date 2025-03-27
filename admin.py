@@ -9,21 +9,14 @@ Description: Findreve 后台管理 admin
 Copyright (c) 2018-2024 by 于小丘Yuerchu, All Rights Reserved. 
 '''
 
-from nicegui import ui, app
-from typing import Optional
+from nicegui import ui
 from typing import Dict
-import traceback
 import model
-import asyncio
 import qrcode
 import base64
 from io import BytesIO
-from PIL import Image
 from fastapi import Request
-import json
-import requests
 from tool import *
-from fastapi.responses import RedirectResponse
 from datetime import datetime
 
 

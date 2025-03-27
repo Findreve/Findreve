@@ -11,24 +11,23 @@ Copyright (c) 2018-2024 by 于小丘Yuerchu, All Rights Reserved.
 
 from nicegui import ui, app
 from typing import Optional
-import traceback
-import asyncio
 import model
 import tool
 from fastapi.responses import RedirectResponse
+from fastapi import Request
 
 def create() -> Optional[RedirectResponse]:
     @ui.page('/login')
-    async def session(redirect_to: str = '/'):
+    async def session(request: Request, redirect_to: str = "/"):
         # 检测是否已登录
         if app.storage.user.get('authenticated', False):
-            ui.navigate.to(redirect_to)
+            return ui.navigate.to(redirect_to)
         
         ui.page_title('登录 Findreve')
         async def try_login() -> None:
             app.storage.user.update({'authenticated': True})
             # 跳转到用户上一页
-            ui.navigate.to(redirect_to)
+            ui.navigate.to(app.storage.user.get('referrer_path', '/'))
 
         async def login():
             if username.value == "" or password.value == "":
