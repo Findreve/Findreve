@@ -11,21 +11,28 @@ Copyright (c) 2018-2024 by 于小丘Yuerchu, All Rights Reserved.
 
 from nicegui import app, ui
 import model.database
+import asyncio
+asyncio.run(model.database.Database().init_db())
 import notfound
 from routes.frontend import main_page
 from routes.frontend import found
 from routes.frontend import login
-from routes.frontend import admin
+from routes.frontend.admin import home
+from routes.frontend.admin import auth
+from routes.frontend.admin import about
+from routes.frontend.admin import items
 from routes.backend import session
 import model
-import asyncio
 import logging
 
 notfound.create()
 main_page.create()
 found.create()
 login.create()
-admin.create()
+home.create()
+auth.create()
+about.create()
+items.create()
 
 app.include_router(session.Router)
 

@@ -40,6 +40,7 @@ def create() -> None:
         db = Database()
         await db.init_db()
         object_data = await db.get_object(key=key)
+        print(object_data)
         
         if not object_data:
             with ui.card().classes('absolute-center w-3/4 h-2/3'):
@@ -89,7 +90,9 @@ def create() -> None:
                     
                     ui.label('物主(Owner)：'+ format_phone(object_data[5], private=False)).classes('text-md w-full text-center -mt-3')
                     
-                    ui.label('丢失时间(Lost time)：'+ object_data[9]).classes('text-md w-full text-center -mt-3')
+                    try:
+                        ui.label('丢失时间(Lost time)：'+ object_data[9]).classes('text-md w-full text-center -mt-3')
+                    except: pass
                     
                     ui.space()
 

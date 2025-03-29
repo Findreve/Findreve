@@ -10,9 +10,6 @@
 -->
 
 <h1 align="center">
-  <br>
-  <a href="https://find.yxqi.cn" alt="logo" ><img src="./static/Findreve.png" width="150"/></a>
-  <br>
   Findreve (Community)
   <br>
 </h1>

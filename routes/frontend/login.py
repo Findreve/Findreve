@@ -35,7 +35,7 @@ def create() -> Optional[RedirectResponse]:
                     });
 
                     if (!response.ok) {
-                        throw new Error('Invalid username or password');
+                        throw new Error('登录失败: ' + response.statusText);
                     }
 
                     const result = await response.json();
@@ -53,22 +53,17 @@ def create() -> Optional[RedirectResponse]:
             """)
         
         ui.page_title('登录 Findreve')
-        async def try_login() -> None:
-            app.storage.user.update({'authenticated': True})
-            # 跳转到用户上一页
-            ui.navigate.to(app.storage.user.get('referrer_path', '/'))
-
         async def login():
             if username.value == "" or password.value == "":
                 ui.notify('账号或密码不能为空', color='negative')
                 return
             
             try:
-                result = await ui.run_javascript(f"login('{username}', '{password}')")
+                result = await ui.run_javascript(f"login('{username.value}', '{password.value}')")
                 if result['status'] == 'success':
                     ui.navigate.to(redirect_to)
                 else:
-                    ui.notify("账号或密码错误", type="negative")
+                    ui.notify(f"登录失败: {result['detail']}", type="negative")
             except Exception as e:
                 ui.notify(f"登录失败: {str(e)}", type="negative")
             
@@ -86,10 +81,10 @@ def create() -> Optional[RedirectResponse]:
             ui.button(icon='lock').props('outline round').classes('mx-auto w-auto shadow-sm w-fill')
             ui.label('登录 Findreve').classes('text-h5 w-full text-center')
             # 用户名/密码框
-            username = ui.input('账号').on('keydown.enter', try_login) \
+            username = ui.input('账号').on('keydown.enter', login) \
                 .classes('block w-full text-gray-900').props('filled')
             password = ui.input('密码', password=True, password_toggle_button=True) \
-                .on('keydown.enter', try_login).classes('block w-full text-gray-900').props('filled')
+                .on('keydown.enter', login).classes('block w-full text-gray-900').props('filled')
             
             # 按钮布局
             ui.button('登录', on_click=lambda: login()).classes('items-center w-full').props('rounded')

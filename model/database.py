@@ -13,7 +13,7 @@ import aiosqlite
 from datetime import datetime
 import tool
 import logging
-import os
+from typing import Optional
 
 class Database:
     def __init__(self, db_path: str = "data.db"):
@@ -123,19 +123,50 @@ class Database:
             )
             await db.commit()
     
-    async def update_object(self, id: int, **kwargs):
+    async def update_object(
+        self, 
+        id: int,
+        key: str = None,
+        name: str = None,
+        icon: str = None,
+        status: str = None,
+        phone: int = None,
+        lost_description: Optional[str] = None,
+        find_ip: Optional[str] = None,
+        lost_time: Optional[str] = None):
         """更新对象信息
         
         :param id: 对象ID
-        :param kwargs: 更新字段
+        :param key: 序列号
+        :param name: 名称
+        :param icon: 图标
+        :param status: 状态
+        :param phone: 电话
+        :param lost_description: 丢失描述
+        :param find_ip: 发现IP
+        :param lost_time: 丢失时间
         """
-        set_values = ", ".join([f"{k} = ?" for k in kwargs.keys()])
-        values = tuple(kwargs.values())
-        
         async with aiosqlite.connect(self.db_path) as db:
+            async with db.execute("SELECT 1 FROM fr_objects WHERE id = ?", (id,)) as cursor:
+                if not await cursor.fetchone():
+                    raise ValueError(f"ID {id} 不存在")
+            
+            async with db.execute("SELECT 1 FROM fr_objects WHERE key = ? AND id != ?", (key, id)) as cursor:
+                if await cursor.fetchone():
+                    raise ValueError(f"序列号 {key} 已存在")
+                
             await db.execute(
-                f"UPDATE fr_objects SET {set_values} WHERE id = ?",
-                (*values, id)
+                f"UPDATE fr_objects SET "
+                f"key = COALESCE(?, key), "
+                f"name = COALESCE(?, name), "
+                f"icon = COALESCE(?, icon), "
+                f"status = COALESCE(?, status), "
+                f"phone = COALESCE(?, phone), "
+                f"context = COALESCE(?, context), "
+                f"find_ip = COALESCE(?, find_ip), "
+                f"lost_at = COALESCE(?, lost_at) "
+                f"WHERE id = ?",
+                (key, name, icon, status, phone, lost_description, find_ip, lost_time, id)
             )
             await db.commit()
     
