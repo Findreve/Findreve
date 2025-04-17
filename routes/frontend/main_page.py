@@ -6,22 +6,41 @@ LastEditTime: 2024-11-29 20:04:24
 FilePath: /Findreve/main_page.py
 Description: Findreve 个人主页 main_page
 
-Copyright (c) 2018-2024 by 于小丘Yuerchu, All Rights Reserved. 
+Copyright (c) 2018-2025 by 于小丘Yuerchu, All Rights Reserved. 
 '''
 
 from nicegui import ui
 from fastapi import Request
-import logging
-import requests
-import json
-import model
 
+def create_chip(name: str, color: str, tooltip: str) -> ui.chip:
+    """Create a UI chip with tooltip"""
+    return ui.chip(name, color=color).classes('p-4').props('floating').tooltip(tooltip)
 
 def create() -> None:
     @ui.page('/')
     async def main_page(request: Request) -> None:
 
         dark_mode = ui.dark_mode(value=True)
+        
+        # 添加页面过渡动画
+        ui.add_head_html('''
+        <style>
+        .fade-in {
+            animation: fadeIn 0.8s ease-in-out;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        body > div {
+            opacity: 0;
+            animation: fadeIn 0.8s ease-in-out forwards;
+        }
+        .transform {
+            transition: all 0.3s ease;
+        }
+        </style>
+        ''')
 
         with ui.row(align_items='center').classes('w-full items-center justify-center items-stretch mx-auto mx-8 max-w-7xl p-24'):
             with ui.column(align_items='center').classes('px-2 max-md:hidden'):
@@ -30,7 +49,6 @@ def create() -> None:
                 ui.chip('🎨 熟悉 Ps/Pr/Ae/Au/Ai').classes('text-xs -mt-1').props('floating outline')
                 ui.chip('🏎 热爱竞速(如地平线5)').classes('text-xs -mt-1 -right-3').props('floating outline')
             with ui.avatar().classes('w-32 h-32 transition-transform duration-300 hover:scale-110 cursor-pointer'):
-                # 下面的这个是Base64格式，你需要改成你自己的头像，支持链接，也可以用Base64本地化
                 ui.image('/static/heyfun.jpg').classes('w-32 h-32')
             with ui.column().classes('px-2 max-md:hidden'):
                 ui.chip('喜欢去广州图书馆看书 📕').classes('text-xs -mt-1 -left-3').props('floating outline')
@@ -56,30 +74,30 @@ def create() -> None:
                 ui.label('开启创造力').classes('text-4xl text-bold -mt-1 right-4')
 
                 with ui.row().classes('items-center'):
-                    ui.chip('Python', color='amber-400').classes('p-4').props('floating').tooltip('Python是世界上最好的语言')
-                    ui.chip('Kotlin', color='violet-400').classes('p-4').props('floating').tooltip('Kotlin给安卓开发APP')
-                    ui.chip('Golang', color='sky-400').classes('p-4').props('floating').tooltip('Golang写后端')
-                    ui.chip('Lua', color='blue-900').classes('p-4').props('floating').tooltip('用aLua给安卓开发，给罗技鼠标写鼠标宏')
-                    ui.chip('c', color='red-400').classes('p-4').props('floating').tooltip('C写嵌入式开发')
-                    ui.chip('FL Studio', color='orange-600').classes('p-4').props('floating').tooltip('FL Studio是世界上最好的宿主')
-                    ui.chip('Photoshop', color='blue-950').classes('p-4').props('floating').tooltip('修图/抠图/画画一站通')
-                    ui.chip('Premiere', color='indigo-900').classes('p-4').props('floating').tooltip('剪视频比较顺手，但是一开风扇狂转')
-                    ui.chip('After Effects', color='indigo-950').classes('p-4').props('floating').tooltip('制作特效，电脑太烂了做不了太花的')
-                    ui.chip('Audition', color='purple-900').classes('p-4').props('floating').tooltip('写歌做母带挺好用的')
-                    ui.chip('Illustrator', color='amber-800').classes('p-4').props('floating').tooltip('自制字体和画动态SVG')
-                    ui.chip('HTML', color='red-900').classes('p-4').props('floating').tooltip('前端入门三件套，不学这玩意其他学了没用')
-                    ui.chip('CSS3', color='cyan-900').classes('p-4').props('floating').tooltip('. window{ show: none; }')
-                    ui.chip('JavaScript', color='lime-900').classes('p-4').props('floating').tooltip('还在努力学习中，只会一些简单的')
-                    ui.chip('git', color='amber-700').classes('p-4').props('floating').tooltip('版本管理是真好用')
-                    ui.chip('Docker', color='sky-600').classes('p-4').props('floating').tooltip('容器化部署')
-                    ui.chip('chatGPT', color='emerald-600').classes('p-4').props('floating').tooltip('文本助驾，写代码/写文章/写论文')
-                    ui.chip('SAI2', color='gray-950').classes('p-4').props('floating').tooltip('入门绘画')
-                    ui.chip('ips Draw', color='gray-900').classes('p-4').props('floating').tooltip('自认为是iOS端最佳绘画软件')
-                    ui.chip('AutoCAD', color='gray-950').classes('p-4').props('floating').tooltip('画图/绘制电路图')
-                    ui.chip('SolidWorks', color='gray-900').classes('p-4').props('floating').tooltip('画图/绘制3D模型')
-                    ui.chip('EasyEDA', color='gray-950').classes('p-4').props('floating').tooltip('画图/绘制电路图')
-                    ui.chip('KiCad', color='gray-900').classes('p-4').props('floating').tooltip('画图/绘制电路图')
-                    ui.chip('Altium Designer', color='gray-950').classes('p-4').props('floating').tooltip('画图/绘制电路图')
+                    create_chip('Python', 'amber-400', 'Python是世界上最好的语言')
+                    create_chip('Kotlin', 'violet-400', 'Kotlin给安卓开发APP')
+                    create_chip('Golang', 'sky-400', 'Golang写后端')
+                    create_chip('Lua', 'blue-900', '用aLua给安卓开发，给罗技鼠标写鼠标宏')
+                    create_chip('c', 'red-400', 'C写嵌入式开发')
+                    create_chip('FL Studio', 'orange-600', 'FL Studio是世界上最好的宿主')
+                    create_chip('Photoshop', 'blue-950', '修图/抠图/画画一站通')
+                    create_chip('Premiere', 'indigo-900', '剪视频比较顺手，但是一开风扇狂转')
+                    create_chip('After Effects', 'indigo-950', '制作特效，电脑太烂了做不了太花的')
+                    create_chip('Audition', 'purple-900', '写歌做母带挺好用的')
+                    create_chip('Illustrator', 'amber-800', '自制字体和画动态SVG')
+                    create_chip('HTML', 'red-900', '前端入门三件套，不学这玩意其他学了没用')
+                    create_chip('CSS3', 'cyan-900', '. window{ show: none; }')
+                    create_chip('JavaScript', 'lime-900', '还在努力学习中，只会一些简单的')
+                    create_chip('git', 'amber-700', '版本管理是真好用')
+                    create_chip('Docker', 'sky-600', '容器化部署')
+                    create_chip('chatGPT', 'emerald-600', '文本助驾，写代码/写文章/写论文')
+                    create_chip('SAI2', 'gray-950', '入门绘画')
+                    create_chip('ips Draw', 'gray-900', '自认为是iOS端最佳绘画软件')
+                    create_chip('AutoCAD', 'gray-950', '画图/绘制电路图')
+                    create_chip('SolidWorks', 'gray-900', '画图/绘制3D模型')
+                    create_chip('EasyEDA', 'gray-950', '画图/绘制电路图')
+                    create_chip('KiCad', 'gray-900', '画图/绘制电路图')
+                    create_chip('Altium Designer', 'gray-950', '画图/绘制电路图')
                     ui.label('...').classes('text-md text-gray-500')
             with ui.card().classes('w-full sm:w-1/3 lg:w-1/6 flex-grow  flex flex-col justify-center'):
                 ui.label('生涯').classes('text-md text-gray-500')

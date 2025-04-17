@@ -45,30 +45,12 @@ def create():
                         vertical-align: -10%;
                     }
                 </style>
-                <script>
-                    async function get_about() {
-                        try {
-                            const response = await fetch('/static/readme.md', {
-                                method: 'GET',
-                                cache: 'no-cache' // 防止缓存问题
-                            });
-    
-                            if (!response.ok) {
-                                console.error('获取readme失败:', response.status);
-                                return '无法加载内容: ' + response.statusText;
-                            }
-    
-                            const data = await response.text();
-                            return data;
-    
-                        } catch (error) {
-                            console.error('获取readme错误:', error);
-                            return '加载错误: ' + error.message;
-                        }
-                    }
-                </script>
                 """
             )
+        
+        ui.add_head_html("""
+            <script type="text/javascript" src="/static/js/main.js"></script>
+            """)
         
         async with frame():
             

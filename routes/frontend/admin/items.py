@@ -12,152 +12,22 @@ Copyright (c) 2018-2024 by 于小丘Yuerchu, All Rights Reserved.
 import asyncio
 from nicegui import ui
 from typing import Dict
-import model
 import qrcode
 import base64
 import json
 from io import BytesIO
 from fastapi import Request
-import model.database
 from tool import *
-from datetime import datetime
-from ..framework import frame
+from ..framework import frame, loding_process
 
 
 def create():      
     @ui.page('/admin/items')
     async def admin_items(request: Request):
         
-        ui.add_head_html(
-            '''
-            <script>
-                async function getItems() {
-                    const accessToken = localStorage.getItem('access_token');
-                    
-                    if (!accessToken) {
-                        return {'status': 'failed', 'detail': 'Access token not found'};
-                    }
-
-                    const url = '/api/admin/items';
-
-                    try {
-                        const response = await fetch(url, {
-                            method: 'GET',
-                            headers: {
-                                'Authorization': `Bearer ${accessToken}`,
-                            },
-                        });
-
-                        if (!response.ok) {
-                            throw new Error('请求失败: ' + response.statusText);
-                        }
-
-                        const data = await response.json();
-
-                        return {'status': 'success', 'data': data};
-
-                    } catch (error) {
-                        return {'status': 'failed', 'detail': error.message};
-                    }
-                }
-                
-                async function addItems(key, name, icon, phone) {
-                    const accessToken = localStorage.getItem('access_token');
-                    
-                    // 构建带参数的URL
-                    const url = `/api/admin/items?key=${encodeURIComponent(key)}&name=${encodeURIComponent(name)}&icon=${encodeURIComponent(icon)}&phone=${encodeURIComponent(phone)}`;
-                    
-                    try {
-                        const response = await fetch(url, {
-                            method: 'POST',
-                            headers: {
-                                'Authorization': `Bearer ${accessToken}`,
-                                'accept': 'application/json'
-                            },
-                            body: ''
-                        });
-                
-                        if (!response.ok) {
-                            throw new Error('请求失败: ' + response.statusText);
-                        }
-                
-                        const result = await response.json();
-                        return {'status': 'success', 'data': result};
-                
-                    } catch (error) {
-                        console.error('Add items error:', error);
-                        return {'status': 'failed', 'detail': error.message};
-                    }
-                }
-                
-                async function updateItems(id, key, name, icon, phone, status, context) {
-                    const accessToken = localStorage.getItem('access_token');
-                    
-                    // 通过URL查询参数发送数据
-                    let url = `/api/admin/items?id=${encodeURIComponent(id)}&key=${encodeURIComponent(key)}&name=${encodeURIComponent(name)}&icon=${encodeURIComponent(icon)}&phone=${encodeURIComponent(phone)}`;
-                    
-                    // 添加状态参数
-                    if (status) {
-                        url += `&status=${encodeURIComponent(status)}`;
-                    }
-                    
-                    // 只在有context且status为lost时添加context参数
-                    if (context && status === 'lost') {
-                        url += `&context=${encodeURIComponent(context)}`;
-                    }
-                    
-                    try {
-                        const response = await fetch(url, {
-                            method: 'PATCH',
-                            headers: {
-                                'Authorization': `Bearer ${accessToken}`,
-                                'accept': 'application/json'
-                            },
-                            body: ''
-                        });
-                
-                        if (!response.ok) {
-                            throw new Error('请求失败: ' + response.statusText);
-                        }
-                
-                        const result = await response.json();
-                        return {'status': 'success', 'data': result};
-                
-                    } catch (error) {
-                        console.error('Update items error:', error);
-                        return {'status': 'failed', 'detail': error.message};
-                    }
-                }
-                
-                async function deleteItem(id) {
-                    const accessToken = localStorage.getItem('access_token');
-                    
-                    // 构建URL，带上物品id参数
-                    const url = `/api/admin/items?id=${encodeURIComponent(id)}`;
-                    
-                    try {
-                        const response = await fetch(url, {
-                            method: 'DELETE',
-                            headers: {
-                                'Authorization': `Bearer ${accessToken}`,
-                                'accept': 'application/json'
-                            }
-                        });
-                
-                        if (!response.ok) {
-                            throw new Error('请求失败: ' + response.statusText);
-                        }
-                
-                        const result = await response.json();
-                        return {'status': 'success', 'data': result};
-                
-                    } catch (error) {
-                        console.error('Delete item error:', error);
-                        return {'status': 'failed', 'detail': error.message};
-                    }
-                }
-            </script>
-            ''')
+        ui.add_head_html("""
+            <script type="text/javascript" src="/static/js/main.js"></script>
+            """)
 
         dark_mode = ui.dark_mode(value=True)
 
@@ -194,7 +64,7 @@ def create():
                         # 设置丢失状态开关
                         edit_set_object_lost.set_value(selected_item.get('status') == '丢失')
                         # 设置物主留言
-                        lostReason.set_value(selected_item.get('context', ''))
+                        lostReason.set_value(selected_item.get('lost_description', ''))
                 except:
                     # 当物品列表未选中，显示添加物品按钮，其他按钮不显示
                     addObjectFAB.set_visibility(True)
@@ -203,39 +73,16 @@ def create():
             # 添加物品
             async def addObject():
                 dialogAddObjectIcon.disable()
-                if object_name.value == "" or object_icon == "" or object_phone == "":
-                    ui.notify('必填字段不能为空', color='negative')
-                    dialogAddObjectIcon.enable()
-                    return
                 
-                if not object_phone.validate():
-                    ui.notify('号码输入有误，请检查！', color='negative')
-                    dialogAddObjectIcon.enable()
-                    return
-                
-                if object_key.value == "":
-                    object_key.set_value(generate_password())
-                
-                try:
-                    # 正确序列化字符串参数
-                    key = json.dumps(object_key.value)
-                    name = json.dumps(object_name.value)
-                    icon = json.dumps(object_icon.value)
-                    phone = json.dumps(object_phone.value)
-                    
-                    result = await ui.run_javascript(
-                        f'addItems({key}, {name}, {icon}, {phone})'
-                    )
-                    
-                    if result.get('status') == 'failed':
-                        ui.notify(f"添加失败: {result.get('detail', '未知错误')}", color='negative')
-                        return
-                        
-                except Exception as e:
-                    ui.notify(f"操作失败: {str(e)}", color='negative')
-                    return
-                else:
+                async def on_success():
                     await reloadTable(tips=False)
+                    
+                    # 清空输入框
+                    object_name.set_value('')
+                    object_icon.set_value('')
+                    object_phone.set_value('')
+                    object_key.set_value('')
+                    
                     with ui.dialog() as addObjectSuccessDialog, ui.card().style('width: 90%; max-width: 500px'):
                         ui.button(icon='done').props('outline round').classes('mx-auto w-auto shadow-sm w-fill')
                         ui.label('添加成功').classes('w-full text-h5 text-center')
@@ -261,20 +108,52 @@ def create():
                         img_str = base64.b64encode(buffered.getvalue()).decode()
 
                         # 展示二维码
-                        ui.image(f'data:image/png;base64,{img_str}')
+                        with ui.row(align_items='center').classes('w-full'):
+                            ui.space()
+                            ui.image(f'data:image/png;base64,{img_str}').classes('w-1/3')
+                            ui.space()
                         
-                        # 添加下载二维码按钮
-                        ui.button("下载二维码", on_click=lambda: ui.download(buffered.getvalue(), 'qrcode.png')) \
-                            .classes('w-full').props('flat rounded')
+                        with ui.row(align_items='center').classes('w-full'):
+                            ui.space()
+                            
+                            ui.button("下载二维码", on_click=lambda: ui.download(buffered.getvalue(), 'qrcode.png')) \
+                                .props('flat rounded')
 
-                        ui.button("返回", on_click=lambda: (addObjectDialog.close(), addObjectSuccessDialog.close(), addObjectSuccessDialog.delete())) \
-                                .classes('w-full').props('flat rounded')
+                            ui.button("返回", on_click=lambda: (addObjectDialog.close(), addObjectSuccessDialog.close(), addObjectSuccessDialog.delete())) \
+                                    .props('flat rounded')
                     
                     addObjectSuccessDialog.open()
-                finally:
-                    dialogAddObjectIcon.enable()
-
                 
+                if object_name.value == "" or object_icon == "" or object_phone == "":
+                    ui.notify('必填字段不能为空', color='negative')
+                    dialogAddObjectIcon.enable()
+                    return
+                
+                if not object_phone.validate():
+                    ui.notify('号码输入有误，请检查！', color='negative')
+                    dialogAddObjectIcon.enable()
+                    return
+                
+                if object_key.value == "":
+                    object_key.set_value(generate_password())
+                
+                async with loding_process(
+                    success_content='添加成功',
+                    on_success=on_success,
+                    on_finally=dialogAddObjectIcon.enable()
+                ):
+                    # 正确序列化字符串参数
+                    key = json.dumps(object_key.value)
+                    name = json.dumps(object_name.value)
+                    icon = json.dumps(object_icon.value)
+                    phone = json.dumps(object_phone.value)
+                    
+                    result = await ui.run_javascript(
+                        f'addItems({key}, {name}, {icon}, {phone})'
+                    )
+                    
+                    if result.get('status') == 'failed':
+                        raise Exception(f"添加失败: {result.get('detail', '未知错误')}")
 
             # 添加物品对话框
             with ui.dialog() as addObjectDialog, ui.card().style('width: 90%; max-width: 500px'):
@@ -283,18 +162,18 @@ def create():
 
                 with ui.scroll_area().classes('w-full'):
                     object_name = ui.input('物品名称').classes('w-full')
-                    object_name_tips = ui.label('显示的物品名称').classes('-mt-3')
+                    ui.label('显示的物品名称').classes('-mt-3')
                     with ui.row(align_items='center').classes('w-full'):
                         with ui.column().classes('w-1/2 flex-grow'):
                             object_icon = ui.input('物品图标').classes('w-full')
                             with ui.row(align_items='center').classes('-mt-3'):
                                 ui.label('将在右侧实时预览图标')
-                                object_icon_link = ui.link('图标列表', 'https://fonts.google.com/icons?icon.set=Material+Icons')
-                        object_icon_preview = ui.icon('').classes('text-2xl flex-grow').bind_name_from(object_icon, 'value')
+                                ui.link('图标列表', 'https://fonts.google.com/icons?icon.set=Material+Icons')
+                        ui.icon('').classes('text-2xl flex-grow').bind_name_from(object_icon, 'value')
                     object_phone = ui.input('物品绑定手机号', validation={'请输入中国大陆格式的11位手机号': lambda value: len(value) == 11 and value.isdigit()}).classes('w-full')
-                    object_phone_tips = ui.label('目前仅支持中国大陆格式的11位手机号').classes('-mt-3')
+                    ui.label('目前仅支持中国大陆格式的11位手机号').classes('-mt-3')
                     object_key = ui.input('物品Key(可选，不填自动生成)').classes('w-full')
-                    object_key_tips = ui.label('物品Key为物品的唯一标识，可用于物品找回').classes('-mt-3')
+                    ui.label('物品Key为物品的唯一标识，可用于物品找回').classes('-mt-3')
         
                 async def handle_add_object():
                     await addObject()
@@ -304,8 +183,51 @@ def create():
                 ui.button("返回", on_click=addObjectDialog.close) \
                         .classes('w-full').props('flat rounded')
             
+            async def editObjectPrepare():
+                '''
+                读取选中物品的ID，并预填充编辑表单
+                '''
+                try:
+                    # 获取选中物品的ID
+                    item_id = str(object_table.selected[0]['id'])
+                    id_json = json.dumps(item_id)
+                    
+                    result: dict = await ui.run_javascript(f'getItem({id_json})')
+                    
+                    if result.get('status') == 'failed':
+                        ui.notify(f"获取物品信息失败: {result.get('detail', '未知错误')}", color='negative')
+                        return
+                        
+                except Exception as e:
+                    ui.notify(f"操作失败: {str(e)}", color='negative')
+                    return
+                else:
+                    result = result['data']['data'][0]
+
+                    # 预填充编辑表单
+                    edit_object_name.set_value(result['name'])
+                    edit_object_icon.set_value(result['icon'])
+                    edit_object_phone.set_value(result['phone'])
+                    edit_object_key.set_value(result['key'])
+                    edit_set_object_lost.set_value(result['status'] == 'lost')
+                    lostReason.set_value(result['lost_description'])
+                    editObjectDialog.open()
+            
             async def editObject():
                 dialogEditObjectIcon.disable()
+                
+                async def on_success():
+                    await reloadTable(tips=False)
+                    
+                    edit_object_name.set_value('')
+                    edit_object_icon.set_value('')
+                    edit_object_phone.set_value('')
+                    edit_object_key.set_value('')
+                    lostReason.set_value('')
+                    edit_set_object_lost.set_value(False)
+                    
+                    editObjectDialog.close()
+                
                 if edit_object_name.value == "" or edit_object_icon.value == "" or edit_object_phone.value == "":
                     ui.notify('必填字段不能为空', color='negative')
                     dialogEditObjectIcon.enable()
@@ -321,7 +243,12 @@ def create():
                     dialogEditObjectIcon.enable()
                     return
                 
-                try:
+                async with loding_process(
+                    success_content='更新成功',
+                    on_success=on_success,
+                    on_error=dialogEditObjectIcon.enable(),
+                    on_finally=dialogEditObjectIcon.enable()
+                ):
                     # 获取选中物品的ID
                     item_id = str(object_table.selected[0]['id'])
                     
@@ -341,23 +268,10 @@ def create():
                     )
                     
                     if result.get('status') == 'failed':
-                        ui.notify(f"更新失败: {result.get('detail', '未知错误')}", color='negative')
-                        dialogEditObjectIcon.enable()
-                        return
-                        
-                except Exception as e:
-                    ui.notify(f"操作失败: {str(e)}", color='negative')
-                    return
-                else:
-                    await reloadTable(tips=True)
-                    editObjectDialog.close()
-                    status_msg = "物品已设置为丢失" if edit_set_object_lost.value else "物品信息更新成功"
-                    ui.notify(status_msg, color='positive')
-                finally:
-                    dialogEditObjectIcon.enable()
+                        raise Exception(f"更新失败: {result.get('detail', '未知错误')}")
 
 
-            # 设置物品丢失对话框
+            # 编辑物品对话框
             with ui.dialog() as editObjectDialog, ui.card().style('width: 90%; max-width: 500px'):
                 ui.button(icon='edit').props('outline round').classes('mx-auto w-auto shadow-sm w-fill')
                 ui.label('编辑物品信息').classes('w-full text-h5 text-center')
@@ -371,7 +285,7 @@ def create():
                             with ui.row(align_items='center').classes('-mt-3'):
                                 ui.label('将在右侧实时预览图标')
                                 ui.link('图标列表', 'https://fonts.google.com/icons?icon.set=Material+Icons')
-                        edit_object_icon_preview = ui.icon('').classes('text-2xl flex-grow').bind_name_from(edit_object_icon, 'value')
+                        ui.icon('').classes('text-2xl flex-grow').bind_name_from(edit_object_icon, 'value')
                     edit_object_phone = ui.input('物品绑定手机号').classes('w-full')
                     ui.label('目前仅支持中国大陆格式的11位手机号').classes('-mt-3')
                     edit_object_key = ui.input('物品Key').classes('w-full').props('readonly')
@@ -382,12 +296,12 @@ def create():
                     ui.html('设置为丢失以后，<b>你的电话号码将会被完整地显示在物品页面</b>(不是“*** **** 8888”而是“188 8888 8888”)，以供拾到者能够记下你的电话号码。此外，在页面底部将会显示一个按钮，这个按钮能够一键拨打预先设置好的电话。').bind_visibility_from(edit_set_object_lost, 'value').classes('-mt-3')
                     lostReason = ui.input('物主留言') \
                         .classes('block w-full text-gray-900').bind_visibility_from(edit_set_object_lost, 'value').classes('-mt-3')
-                    lostReasonTips = ui.label('非必填，但建议填写，以方便拾到者联系你').classes('-mt-3').bind_visibility_from(edit_set_object_lost, 'value').classes('-mt-3')
+                    ui.label('非必填，但建议填写，以方便拾到者联系你').classes('-mt-3').bind_visibility_from(edit_set_object_lost, 'value').classes('-mt-3')
 
                     ui.separator().classes('my-4')
                     with ui.card().classes('w-full bg-red-50 dark:bg-red-900 q-pa-md'):
                         ui.label('危险区域').classes('text-red-500 font-bold')
-                        delete_btn = ui.button('删除物品', icon='delete_forever') \
+                        ui.button('删除物品', icon='delete_forever') \
                             .classes('w-full text-red-500').props('flat').on_click(lambda: delete_confirmation_dialog.open())
                     
                 async def handle_edit_object():
@@ -405,7 +319,16 @@ def create():
                 ui.label('此操作不可撤销，删除后物品数据将永久丢失！').classes('w-full text-center text-red-500')
                 
                 async def handle_delete_item():
-                    try:
+                    
+                    async def on_success():
+                        await reloadTable(tips=False)
+                        delete_confirmation_dialog.close()
+                        editObjectDialog.close()
+                    
+                    async with loding_process(
+                        success_content='物品已删除',
+                        on_success=on_success
+                    ):
                         # 获取选中物品的ID
                         item_id = str(object_table.selected[0]['id'])
                         id_json = json.dumps(item_id)
@@ -413,17 +336,7 @@ def create():
                         result = await ui.run_javascript(f'deleteItem({id_json})')
                         
                         if result.get('status') == 'failed':
-                            ui.notify(f"删除失败: {result.get('detail', '未知错误')}", color='negative')
-                            return
-                            
-                    except Exception as e:
-                        ui.notify(f"操作失败: {str(e)}", color='negative')
-                        return
-                    else:
-                        await reloadTable(tips=False)
-                        delete_confirmation_dialog.close()
-                        editObjectDialog.close()
-                        ui.notify('物品已删除', color='positive')
+                            raise Exception(f"删除失败: {result.get('detail', '未知错误')}")
                 
                 with ui.row().classes('w-full'):
                     ui.space()
@@ -445,7 +358,6 @@ def create():
                         return []
                     
                     # 从response中提取数据
-                    # 注意：根据API文档，数据可能在response['data']['data']中
                     raw_data = response.get('data', {})
                     objects = raw_data.get('data', []) if isinstance(raw_data, dict) else raw_data
                     
@@ -505,7 +417,7 @@ def create():
                 selection='single',
                 columns=object_columns,
                 rows=objects,
-                on_select=lambda: objectTableOnSelect()
+                # on_select=lambda: objectTableOnSelect()
             ).classes('w-full').props('flat')
 
             object_table.add_slot('body-cell-status', '''
@@ -531,11 +443,11 @@ def create():
                             ui.switch(column['label'], value=True, on_change=lambda e,
                                     column=column: tableToggle(column=column, visible=e.value, table=object_table))
             # FAB按钮
-            with ui.page_sticky(x_offset=24, y_offset=24) as addObjectFAB:
+            with ui.page_sticky(x_offset=24, y_offset=24) \
+                .bind_visibility_from(object_table, 'selected', backward=lambda x: not x) as addObjectFAB:
                 ui.button(icon='add', on_click=addObjectDialog.open) \
                     .props('fab')
-            with ui.page_sticky(x_offset=24, y_offset=24) as editObjectFAB:
-                ui.button(icon='edit', on_click=editObjectDialog.open) \
+            with ui.page_sticky(x_offset=24, y_offset=24) \
+                .bind_visibility_from(addObjectFAB, 'visible', backward=lambda x: not x) as editObjectFAB:
+                ui.button(icon='edit', on_click=editObjectPrepare) \
                     .props('fab')
-            # 单独拉出来默认隐藏，防止无法再设置其显示
-            editObjectFAB.set_visibility(False)

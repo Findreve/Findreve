@@ -22,6 +22,8 @@ from routes.frontend.admin import auth
 from routes.frontend.admin import about
 from routes.frontend.admin import items
 from routes.backend import session
+from routes.backend import admin
+from routes.backend import object
 import model
 import logging
 
@@ -34,7 +36,9 @@ auth.create()
 about.create()
 items.create()
 
+app.include_router(admin.Router)
 app.include_router(session.Router)
+app.include_router(object.Router)
 
 # 添加静态文件目录
 try:

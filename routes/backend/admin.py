@@ -1,13 +1,14 @@
-from nicegui import app
+from fastapi import APIRouter
 from typing import Annotated, Optional
 from fastapi import Depends
 from fastapi import HTTPException, status
 from jwt import InvalidTokenError
 import jwt, JWT
 from model import database
-from model import token as Token
 from model.response import DefaultResponse
 from model.items import Item
+
+Router = APIRouter(prefix='/api/admin', tags=['admin'])
 
 async def is_admin(token: Annotated[str, Depends(JWT.oauth2_scheme)]):
     credentials_exception = HTTPException(
@@ -26,13 +27,13 @@ async def is_admin(token: Annotated[str, Depends(JWT.oauth2_scheme)]):
         raise credentials_exception
     return True
 
-@app.get('/api/admin')
+@Router.get('/')
 async def is_admin(
     is_admin: Annotated[str, Depends(is_admin)]
 ):
     return is_admin
 
-@app.get('/api/admin/items')
+@Router.get('/items')
 async def get_items(
     is_admin: Annotated[str, Depends(is_admin)],
     id: int = None,
@@ -62,7 +63,7 @@ async def get_items(
     else:
         return DefaultResponse(data=[])
 
-@app.post('/api/admin/items')
+@Router.post('/items')
 async def add_items(
     is_admin: Annotated[str, Depends(is_admin)],
     key: str,
@@ -72,7 +73,7 @@ async def add_items(
     await database.Database().add_object(
         key=key, name=name, icon=icon, phone=phone)
 
-@app.patch('/api/admin/items')
+@Router.patch('/items')
 async def update_items(
     is_admin: Annotated[str, Depends(is_admin)],
     id: int,
@@ -96,7 +97,7 @@ async def update_items(
     else:
         return DefaultResponse()
 
-@app.delete('/api/admin/items')
+@Router.delete('/items')
 async def delete_items(
     is_admin: Annotated[str, Depends(is_admin)],
     id: int):
