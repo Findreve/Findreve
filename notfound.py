@@ -15,5 +15,5 @@ from fastapi.responses import HTMLResponse
 
 def create() -> None:
     @app.get('/404')
-    async def not_found_page(request: Request) -> None:
+    async def not_found_page(request: Request) -> HTMLResponse:
         return HTMLResponse(status_code=404)

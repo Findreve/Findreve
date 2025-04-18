@@ -10,49 +10,20 @@ Copyright (c) 2018-2024 by 于小丘Yuerchu, All Rights Reserved.
 '''
 
 from nicegui import ui
+from fastapi import Request
 from tool import *
 from ..framework import frame
 
 
 def create():
     @ui.page('/admin/about')
-    async def admin_about():
-        
-        dark_mode = ui.dark_mode(value=True) 
-        
-        ui.add_head_html(
-                code="""
-                <style>
-                    a:link:not(.browser-window *),
-                    a:visited:not(.browser-window *) {
-                        color: inherit !important;
-                        text-decoration: none;
-                    }
-
-                    a:hover:not(.browser-window *),
-                    a:active:not(.browser-window *) {
-                        opacity: 0.85;
-                    }
-                    
-                    .bold-links a:link {
-                        font-weight: 500;
-                    }
-
-                    .arrow-links a:link:not(.auto-link)::after {
-                        content: "north_east";
-                        font-family: "Material Icons";
-                        font-weight: 100;
-                        vertical-align: -10%;
-                    }
-                </style>
-                """
-            )
-        
+    async def admin_about(request: Request):
         ui.add_head_html("""
+            <style type="text/css" src="/static/css/about.css"></style>
             <script type="text/javascript" src="/static/js/main.js"></script>
             """)
         
-        async with frame():
+        async with frame(request=request):
             
             # 关于 Findreve
             with ui.tab_panel('about'):

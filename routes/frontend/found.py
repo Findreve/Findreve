@@ -94,7 +94,7 @@ def create() -> None:
         
         await ui.context.client.connected()
         
-        async with frame(page='found'):
+        async with frame(page='found', request=request):
             if key == "" or key == None:
                 ui.navigate.to('/404')
                 return

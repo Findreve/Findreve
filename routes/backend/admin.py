@@ -8,8 +8,6 @@ from model import database
 from model.response import DefaultResponse
 from model.items import Item
 
-Router = APIRouter(prefix='/api/admin', tags=['admin'])
-
 async def is_admin(token: Annotated[str, Depends(JWT.oauth2_scheme)]):
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
@@ -27,17 +25,22 @@ async def is_admin(token: Annotated[str, Depends(JWT.oauth2_scheme)]):
         raise credentials_exception
     return True
 
+Router = APIRouter(
+    prefix='/api/admin', 
+    tags=['admin'],
+    dependencies=[Depends(is_admin)]
+)
+
 @Router.get('/')
-async def is_admin(
+async def verity_admin(
     is_admin: Annotated[str, Depends(is_admin)]
 ):
     return is_admin
 
 @Router.get('/items')
 async def get_items(
-    is_admin: Annotated[str, Depends(is_admin)],
-    id: int = None,
-    key: str = None):
+    id: Optional[int] = None,
+    key: Optional[str] = None):
     results = await database.Database().get_object(id=id, key=key)
     
     if results is not None:
@@ -65,7 +68,6 @@ async def get_items(
 
 @Router.post('/items')
 async def add_items(
-    is_admin: Annotated[str, Depends(is_admin)],
     key: str,
     name: str,
     icon: str,
@@ -75,13 +77,12 @@ async def add_items(
 
 @Router.patch('/items')
 async def update_items(
-    is_admin: Annotated[str, Depends(is_admin)],
     id: int,
-    key: str = None,
-    name: str = None,
-    icon: str = None,
-    status: str = None,
-    phone: int = None,
+    key: Optional[str] = None,
+    name: Optional[str] = None,
+    icon: Optional[str] = None,
+    status: Optional[str] = None,
+    phone: Optional[int] = None,
     lost_description: Optional[str] = None,
     find_ip: Optional[str] = None,
     lost_time: Optional[str] = None):
@@ -99,7 +100,6 @@ async def update_items(
 
 @Router.delete('/items')
 async def delete_items(
-    is_admin: Annotated[str, Depends(is_admin)],
     id: int):
     try:
         await database.Database().delete_object(id=id)

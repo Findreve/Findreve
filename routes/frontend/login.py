@@ -12,7 +12,6 @@ Copyright (c) 2018-2024 by 于小丘Yuerchu, All Rights Reserved.
 from nicegui import ui
 from typing import Optional
 from fastapi.responses import RedirectResponse
-from fastapi import Request
 from .framework import frame
 
 def create() -> Optional[RedirectResponse]:
@@ -23,9 +22,11 @@ def create() -> Optional[RedirectResponse]:
             """)
         
         ui.page_title('登录 Findreve')
-        ui.dark_mode(True)
         
-        async with frame(page='session'):
+        async with frame(page='session', redirect_to=redirect_to):
+            
+            await ui.context.client.connected()
+            
             async def login():
                 if username.value == "" or password.value == "":
                     ui.notify('账号或密码不能为空', color='negative')

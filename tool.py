@@ -15,7 +15,12 @@ import logging
 from datetime import datetime, timezone
 import os
 
-def format_phone(phone: str, groups: list = None, separator: str = " ", private: bool = False) -> str:
+def format_phone(
+    phone: str, 
+    groups: list[int] | None = None, 
+    separator: str = " ", 
+    private: bool = False
+    ) -> str:
     """
     格式化中国大陆的11位手机号
 
@@ -41,7 +46,9 @@ def format_phone(phone: str, groups: list = None, separator: str = " ", private:
         
     return separator.join(result)
 
-def generate_password(length: int = 8) -> str:
+def generate_password(
+    length: int = 8
+    ) -> str:
     """
     生成指定长度的随机密码。
     
@@ -54,7 +61,9 @@ def generate_password(length: int = 8) -> str:
     
     return secrets.token_hex(length)
 
-def hash_password(password: str) -> str:
+def hash_password(
+    password: str
+    ) -> str:
     """
     生成密码的加盐哈希值。
 
@@ -70,7 +79,11 @@ def hash_password(password: str) -> str:
     pwdhash = binascii.hexlify(pwdhash)
     return (salt + pwdhash).decode('ascii')
 
-def verify_password(stored_password: str, provided_password: str, debug: bool = False) -> bool:
+def verify_password(
+    stored_password: str, 
+    provided_password: str, 
+    debug: bool = False
+    ) -> bool:
     """
     验证存储的密码哈希值与用户提供的密码是否匹配。
 
@@ -96,7 +109,9 @@ def verify_password(stored_password: str, provided_password: str, debug: bool = 
         logging.info(f"原密码: {provided_password}, 哈希值: {pwdhash}, 存储哈希值: {stored_password}")
     return pwdhash == stored_password
 
-def format_time_diff(target_time: datetime | str) -> str:
+def format_time_diff(
+    target_time: datetime | str
+    ) -> str:
     """
     计算目标时间与当前时间的差值，返回易读的中文描述
     

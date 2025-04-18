@@ -24,22 +24,7 @@ def create() -> None:
         
         # 添加页面过渡动画
         ui.add_head_html('''
-        <style>
-        .fade-in {
-            animation: fadeIn 0.8s ease-in-out;
-        }
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(20px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-        body > div {
-            opacity: 0;
-            animation: fadeIn 0.8s ease-in-out forwards;
-        }
-        .transform {
-            transition: all 0.3s ease;
-        }
-        </style>
+        <style type="text/css" src="/static/css/main_page.css"></style>
         ''')
 
         with ui.row(align_items='center').classes('w-full items-center justify-center items-stretch mx-auto mx-8 max-w-7xl p-24'):

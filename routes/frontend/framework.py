@@ -1,11 +1,14 @@
 from contextlib import asynccontextmanager
 from nicegui import ui
 import asyncio
+from fastapi import Request
 from typing import Optional, Literal
 
 @asynccontextmanager
 async def frame(
-    page: Literal['admin', 'session', 'found'] = 'admin'
+    request: Request = None,
+    page: Literal['admin', 'session', 'found'] = 'admin',
+    redirect_to: str = None
 ):
     
     ui.add_head_html("""
@@ -15,8 +18,15 @@ async def frame(
     await ui.context.client.connected()
     
     is_login = await ui.run_javascript('is_login()', timeout=3)
-    if str(is_login).lower() != 'true' and page != 'session':
-        ui.navigate.to('/login?redirect_to=/admin')
+    if str(is_login).lower() != 'true':
+        if page not in ['session', 'found']:
+            ui.navigate.to(f'/login?redirect_to={request.url.path}')
+    else:
+        if page == 'session':
+            ui.navigate.to(redirect_to)
+        
+    if page != 'found':
+        ui.dark_mode(value=True)
     
     with ui.header() \
     .classes('items-center py-2 px-5 no-wrap').props('elevated'):
@@ -31,7 +41,7 @@ async def frame(
 
     with ui.left_drawer() as left_drawer:
         with ui.column(align_items='center').classes('w-full'):
-            ui.image('/static/Findreve.png').classes('w-1/2 mx-auto')
+            ui.image('/static/Findreve.png').classes('w-1/3 mx-auto')
             ui.label('Findreve').classes('text-2xl text-bold')
             ui.label("免费版，无需授权").classes('text-sm text-gray-500')
     

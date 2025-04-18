@@ -11,17 +11,15 @@ Copyright (c) 2018-2024 by 于小丘Yuerchu, All Rights Reserved.
 
 from nicegui import ui
 from tool import *
+from fastapi import Request
 from ..framework import frame
 
 
 def create():  
     @ui.page('/admin/auth')
-    async def admin_auth():
-
-        dark_mode = ui.dark_mode(value=True)    
-             
+    async def admin_auth(request: Request):
         # Findreve 授权
-        async with frame():
+        async with frame(request=request):
 
             ui.label('Findreve 授权').classes('text-2xl text-bold')
             

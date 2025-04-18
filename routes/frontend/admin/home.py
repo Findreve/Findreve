@@ -9,22 +9,21 @@ Description: Findreve 后台管理 admin
 Copyright (c) 2018-2024 by 于小丘Yuerchu, All Rights Reserved. 
 '''
 
-from nicegui import ui
+from nicegui import ui, app
+from fastapi import Request
+from fastapi.responses import RedirectResponse
 from tool import *
 from ..framework import frame
 
 
 def create():
-    @ui.page('/admin')
+    @app.get('/admin')
     async def jump():
-        ui.navigate.to('/admin/home')
-        
+        return RedirectResponse(url='/admin/home')
+
     @ui.page('/admin/home')
-    async def admin_home():
-
-        dark_mode = ui.dark_mode(value=True)
-
-        async with frame():
+    async def admin_home(request: Request):
+        async with frame(request=request):
             with ui.tab_panel('main_page'):
                 ui.label('首页配置').classes('text-2xl text-bold')
                 ui.label('暂不支持，请直接修改main_page.py').classes('text-md text-gray-600').classes('w-full')

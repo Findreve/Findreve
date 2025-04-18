@@ -22,7 +22,7 @@
 <p align="center">
   <a href="https://www.yxqi.cn">Homepage</a> •
   <a href="https://find.yxqi.cn">Demo</a> •
-  <a href="https://findreve.yxqi.cn">Documents</a> •
+  <a href="./CHANGELOG.md">ChangeLog</a> •
   <a href="https://github.com/Findreve/Findreve/releases">Download</a> •
   <a href="#License">License</a>
 </p>
