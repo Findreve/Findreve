@@ -15,6 +15,7 @@ import tool
 import logging
 from typing import Optional
 
+# 数据库类
 class Database:
     def __init__(self, db_path: str = "data.db"):
         self.db_path = db_path
@@ -103,7 +104,8 @@ class Database:
             logging.info("数据库初始化完成并提交更改")
     
     async def add_object(self, key: str, name: str, icon: str = None, phone: str = None):
-        """添加新对象
+        """
+        添加新对象
         
         :param key: 序列号
         :param name: 名称
@@ -134,7 +136,8 @@ class Database:
         lost_description: Optional[str] = None,
         find_ip: Optional[str] = None,
         lost_time: Optional[str] = None):
-        """更新对象信息
+        """
+        更新对象信息
         
         :param id: 对象ID
         :param key: 序列号
@@ -171,7 +174,8 @@ class Database:
             await db.commit()
     
     async def get_object(self, id: int = None, key: str = None):
-        """获取对象
+        """
+        获取对象
         
         :param id: 对象ID
         :param key: 序列号
@@ -187,7 +191,8 @@ class Database:
                     return await cursor.fetchall()
     
     async def delete_object(self, id: int):
-        """删除对象
+        """
+        删除对象
         
         :param id: 对象ID
         """
@@ -196,7 +201,8 @@ class Database:
             await db.commit()
     
     async def set_setting(self, name: str, value: str):
-        """设置配置项
+        """
+        设置配置项
         
         :param name: 配置项名称
         :param value: 配置项值
@@ -209,7 +215,8 @@ class Database:
             await db.commit()
     
     async def get_setting(self, name: str):
-        """获取配置项
+        """
+        获取配置项
         
         :param name: 配置项名称
         """

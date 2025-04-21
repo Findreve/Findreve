@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" href="/favicon.ico" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="Findreve - 物品管理与寻回解决方案" />
+    <title>Findreve</title>
+    
+    <!-- 预加载关键资源 -->
+    <link rel="preload" href="/src/assets/styles/global.css" as="style">
+    <link rel="preload" href="https://cdn.jsdelivr.net/npm/@mdi/font@latest/css/materialdesignicons.min.css" as="style">
+    
+    <!-- 添加初始样式以防止闪烁 -->
+    <style>
+      html, body {
+        margin: 0;
+        padding: 0;
+        height: 100%;
+        width: 100%;
+      }
+      
+      /* 初始加载样式 */
+      #app {
+        height: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      
+      /* 针对暗色和亮色模式的初始背景色 */
+      .v-theme--dark {
+        background-color: #121212;
+        color: #ffffff;
+      }
+      
+      .v-theme--light {
+        background-color: #ffffff;
+        color: #000000;
+      }
+      
+      /* 初始加载指示器 */
+      .app-loading {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        height: 100vh;
+        width: 100vw;
+        position: fixed;
+        top: 0;
+        left: 0;
+        z-index: 9999;
+        transition: opacity 0.3s ease;
+      }
+      
+      [data-app-loaded="true"] .app-loading {
+        opacity: 0;
+        pointer-events: none;
+      }
+    </style>
+  </head>
+  <body>
+    <!-- 初始加载指示器 -->
+    <div class="app-loading">
+      <div class="loading-spinner">
+        <!-- 简单的CSS加载动画 -->
+        <div style="width: 40px; height: 40px; border: 4px solid rgba(255,255,255,0.3); border-radius: 50%; border-top-color: #2196F3; animation: spin 1s linear infinite;"></div>
+      </div>
+    </div>
+    
+    <div id="app"></div>
+    
+    <script>
+      // 检测应用加载状态
+      window.addEventListener('load', function() {
+        setTimeout(function() {
+          document.querySelector('.app-loading').style.display = 'none';
+        }, 500);
+      });
+    </script>
+    
+    <!-- 添加CSS动画 -->
+    <style>
+      @keyframes spin {
+        to { transform: rotate(360deg); }
+      }
+    </style>
+    
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>

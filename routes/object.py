@@ -2,12 +2,18 @@ import random
 from fastapi import APIRouter, Request
 from fastapi.responses import JSONResponse
 from model.database import Database
-from model.response import DefaultResponse
+from model.response import DefaultResponse, ObjectData
 import asyncio
 
-Router = APIRouter(prefix='/api/object', tags=['object'])
+Router = APIRouter(prefix='/api/object', tags=['物品 Object'])
 
-@Router.get('/{item_key}')
+@Router.get(
+    path='/{item_key}',
+    summary="获取物品信息",
+    description="根据物品键获取物品信息",
+    response_model=DefaultResponse,
+    response_description="物品信息"
+)
 async def get_object(item_key: str, request: Request):
     """
     获取物品信息 / Get object information
@@ -27,9 +33,15 @@ async def get_object(item_key: str, request: Request):
         else:
             await asyncio.sleep(random.uniform(0.10, 0.30))
         
-        return DefaultResponse(
-            data=object_data
-        )
+        return DefaultResponse(data=ObjectData(
+            id=object_data[0],
+            key=object_data[1],
+            name=object_data[2],
+            icon=object_data[3],
+            status=object_data[4],
+            phone=object_data[5],
+            context=object_data[6]
+        ).model_dump())
     else: return JSONResponse(
         status_code=404,
         content=DefaultResponse(

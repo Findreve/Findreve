@@ -1,4 +1,4 @@
-from nicegui import app
+# 导入库
 from typing import Annotated
 from datetime import datetime, timedelta, timezone
 from fastapi import Depends, HTTPException, status
@@ -10,8 +10,9 @@ from model.token import Token
 from model import database
 from tool import verify_password
 
-Router = APIRouter()
+Router = APIRouter(tags=["令牌 session"])
 
+# 创建令牌
 def create_access_token(data: dict, expires_delta: timedelta | None = None):
     to_encode = data.copy()
     if expires_delta:
@@ -22,6 +23,7 @@ def create_access_token(data: dict, expires_delta: timedelta | None = None):
     encoded_jwt = jwt.encode(to_encode, JWT.SECRET_KEY, algorithm='HS256')
     return encoded_jwt
 
+# 验证账号密码
 async def authenticate_user(username: str, password: str):
     # 验证账号和密码
     account = await database.Database().get_setting('account')
@@ -33,7 +35,13 @@ async def authenticate_user(username: str, password: str):
     return {'is_authenticated': True}
 
 # FastAPI 登录路由 / FastAPI login route
-@app.post("/api/token")
+@Router.post(
+    path="/api/token",
+    summary="获取访问令牌",
+    description="使用用户名和密码获取访问令牌",
+    response_model=Token,
+    response_description="访问令牌"
+)
 async def login_for_access_token(
     form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
 ) -> Token:

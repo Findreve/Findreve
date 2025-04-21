@@ -2,7 +2,6 @@
  * @Author: 于小丘 海枫
  * @Date: 2024-11-29 20:06:02
  * @LastEditors: Yuerchu admin@yuxiaoqiu.cn
- * @LastEditTime: 2024-11-29 20:28:54
  * @FilePath: /Findreve/README.md
  * @Description: Findreve
  * 
@@ -28,7 +27,10 @@
 </p>
 
 ## 介绍 Introduction
-Findreve 是一款强大且直观的解决方案，旨在帮助您管理个人物品，并确保丢失后能够安全找回。每个物品都会被分配一个 `唯一 ID` ，并生成一个 `安全链接` ，可轻松嵌入到 `二维码` 或 `NFC 标签` 中。当扫描该代码时，会将拾得者引导至一个专门的网页，上面显示物品详情和您的联系信息，既保障隐私又便于沟通。无论您是在管理个人物品还是专业资产，Findreve 都能以高效、简便的方式弥合丢失与找回之间的距离。
+Findreve 是一款强大且直观的解决方案，旨在帮助您管理个人物品，并确保丢失后能够安全找回。
+每个物品都会被分配一个 `唯一 ID` ，并生成一个 `安全链接` ，可轻松嵌入到 `二维码` 或 `NFC 标签` 中。
+当扫描该代码时，会将拾得者引导至一个专门的网页，上面显示物品详情和您的联系信息，既保障隐私又便于沟通。
+无论您是在管理个人物品还是专业资产，Findreve 都能以高效、简便的方式弥合丢失与找回之间的距离。
 
 Findreve is a powerful and intuitive solution, an enhanced version of Findreve, designed
 to help you manage your personal items and ensure their safe recovery in case of loss. Each
@@ -69,4 +71,6 @@ Open Source Free Version: Licensed under the `GPLv3`.
 基于赞助的专业版：基于您的赞助，您可获得附加功能和源代码的版本，允许进一步开发用于个人或内部使用。
 然而，不允许重新分发修改后的或原始的源代码。
 
-Donation-Based Premium Version: By making a donation, you can access a version with additional features and source code, which allows further development for personal or internal use. However, redistribution of the modified or original source code is not permitted.
+Donation-Based Premium Version: By making a donation, you can access a version with additional features
+and source code, which allows further development for personal or internal use. However, redistribution
+of the modified or original source code is not permitted.

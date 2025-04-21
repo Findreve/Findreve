@@ -1,6 +1,16 @@
 from pydantic import BaseModel
+from typing import Literal, Optional
 
 class DefaultResponse(BaseModel):
     code: int = 0
     data: dict | list | None = None
     msg: str = ""
+
+class ObjectData(BaseModel):
+    id: int
+    key: str
+    name: str
+    icon: str
+    status: Literal['ok', 'lost']
+    phone: str
+    context: Optional[str] = None
