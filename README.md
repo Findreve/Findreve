@@ -10,7 +10,7 @@
 
 <h1 align="center">
   <br>
-  <a href="https://find.yxqi.cn" alt="logo" ><img src="./static/Findreve.png" width="150"/></a>
+  <a href="https://find.yxqi.cn" alt="logo" ><img src="./docs/Findreve.png" width="150"/></a>
   <br>
   Findreve (Community)
   <br>
@@ -40,19 +40,32 @@ dedicated webpage displaying the item's details and your contact information, en
 privacy and ease of communication. Whether you are managing personal items or professional
 assets, Findreve bridges the gap between loss and recovery in an efficient and simple way.
 
-## 安装 Install
-你需要安装Python 3.8 以上的版本。然后，clone 本仓库到您的服务器并解压，然后安装下面的依赖：
+## 快速开始
+在 [最新发行版](https://github.com/Findreve/Findreve/releases/latest) 中下载，然后按照要求启动即可。
 
-You need to have Python 3.8 or higher installed on your server. Then, clone this repository
-to your server and install the required dependencies:
-
-> `pip install -r requirements.txt`
-
-## 启动 Launch
 使用下面的命令来启动 Findreve:
 
 Run the following command to start Findreve:
-> Python main.py
+
+> python main.py
+
+您可能需要准备 Findreve 的前端文件才可正常启动。
+
+<!--
+
+```bash
+# Windows
+findreve.exe
+
+# Linux
+# 解压
+tar -zxvf findreve_VERSION_OS_ARCH.tar.gz
+# 赋予执行权限
+chmod +x ./findreve
+# 启动 Findreve
+./findreve
+```
+-->
 
 启动后， Findreve 会在程序的根目录自动创建 SQLite 数据库，并在
 终端显示管理员账号密码。请注意，账号密码仅显示一次，请注意保管。
@@ -60,8 +73,30 @@ Run the following command to start Findreve:
 Upon launch, Findreve will create a SQLite database in the project's root directory and
 display the administrator's account and password in the console.
 
+## 构建
+你需要安装Python 3.8 以上的版本。然后，clone 本仓库到您的服务器并解压，然后安装下面的依赖：
+
+You need to have Python 3.8 or higher installed on your server. Then, clone this repository
+to your server and install the required dependencies:
+
+> `pip install -r requirements.txt`
+
+然后进入 `frontend` 文件夹，编译前端文件：
+
+```bash
+# 安装依赖
+yarn install
+
+# 编译
+yarn build
+```
+
+编译完成后，将 `dist` 文件夹拷贝到 Findreve 根目录。
+
 ## 技术栈 Stacks
-- Nicegui
+
+- frontend: `Vue.js` + `Vuetify`
+- Backend: `FastAPI`
 
 ## 许可证 License
 此仓库的 Findreve 是社区版，完全免费，基于 GPLv3 协议。

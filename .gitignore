@@ -4,8 +4,8 @@
 # environment
 .venv/
 
-# NiceGUI Data
-.nicegui/
+# Dist
+dist/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

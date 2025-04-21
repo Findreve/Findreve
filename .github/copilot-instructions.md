@@ -24,10 +24,10 @@ FastAPI 提供 API 服务，AioSqlite 用于异步数据库操作。
 ## 项目结构
 - `/model`: 模型组件
   - `database`: AioSQLite数据库组件
-- `/routes`: 路由组件
-  - `backend`: 直接由 FastAPI 控制的路由（后端路由）
-  - `frontend`: 由 NiceGUI 渲染的路由（前端路由）
-- `/static`: 静态文件（会自动挂载到网站的 `/static` 目录下）
+- `/routes`: 后端路由
+- `/frontend`: 前端源码，基于 Vue + Vite + Vuetify
+- `dist`: 前端编译后的文件
+- `/static`: 后端静态文件（会自动挂载到网站的 `/static` 目录下）
 - `main.py`: 启动项目
 
 ## 回复用户规则

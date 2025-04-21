@@ -1,6 +1,9 @@
 from fastapi import FastAPI
+from fastapi.responses import FileResponse
+from fastapi import Request, HTTPException
 from contextlib import asynccontextmanager
 import model.database
+import os
 
 # 定义程序参数
 APP_NAME: str = 'Findreve'
@@ -27,3 +30,26 @@ app = FastAPI(
     description=description,
     lifespan=lifespan
 )
+
+@app.get("/")
+def read_root():
+    return FileResponse("dist/index.html")
+
+# 回退路由
+@app.get("/{path:path}")
+async def serve_spa(request: Request, path: str):
+    # 排除API路由
+    if path.startswith("api/"):
+        raise HTTPException(status_code=404, detail="Not Found")
+    
+    # 检查是否是静态资源请求
+    if path.startswith("assets/") and os.path.exists(f"dist/{path}"):
+        return FileResponse(f"dist/{path}")
+    
+    # 检查文件是否存在于dist目录
+    dist_file_path = os.path.join("dist", path)
+    if os.path.exists(dist_file_path) and not os.path.isdir(dist_file_path):
+        return FileResponse(dist_file_path)
+        
+    # 对于所有其他前端路由，返回index.html让Vue Router处理
+    return FileResponse("dist/index.html")

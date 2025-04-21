@@ -22,9 +22,10 @@ app.include_router(object.Router)
 
 # 添加静态文件目录
 try:
-    app.mount("/static", StaticFiles(directory="static"), name="static")
-except RuntimeError:
-    logging.error('无法挂载静态目录')
+    # 挂载静态文件目录
+    app.mount("/dist", StaticFiles(directory="dist"), name="dist")
+except RuntimeError as e:
+    logging.warning(f'无法挂载静态目录: {str(e)}, 将启动纯后端模式')
 
 # 作为主程序启动时
 if __name__ == '__main__':
