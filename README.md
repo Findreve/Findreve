@@ -1,13 +1,3 @@
-<!--
- * @Author: 于小丘 海枫
- * @Date: 2024-11-29 20:06:02
- * @LastEditors: Yuerchu admin@yuxiaoqiu.cn
- * @FilePath: /Findreve/README.md
- * @Description: Findreve
- * 
- * Copyright (c) 2018-2024 by 于小丘Yuerchu, All Rights Reserved. 
--->
-
 <h1 align="center">
   <br>
   <a href="https://find.yxqi.cn" alt="logo" ><img src="./docs/Findreve.png" width="150"/></a>

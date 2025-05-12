@@ -1,14 +1,3 @@
-'''
-Author: 于小丘 海枫
-Date: 2024-10-02 15:23:34
-LastEditors: Yuerchu admin@yuxiaoqiu.cn
-LastEditTime: 2024-11-29 20:05:42
-FilePath: /Findreve/tool.py
-Description: Findreve 小工具 tool
-
-Copyright (c) 2018-2024 by 于小丘Yuerchu, All Rights Reserved. 
-'''
-
 import hashlib
 import binascii
 import logging
