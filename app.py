@@ -2,8 +2,12 @@ from fastapi import FastAPI
 from fastapi.responses import FileResponse
 from fastapi import Request, HTTPException
 from contextlib import asynccontextmanager
+from routes import (session, admin, object)
 import model.database
-import os
+import os, asyncio
+
+# 初始化数据库
+asyncio.run(model.database.Database().init_db())
 
 # 定义程序参数
 APP_NAME: str = 'Findreve'
@@ -30,6 +34,11 @@ app = FastAPI(
     description=description,
     lifespan=lifespan
 )
+
+# 挂载后端路由
+app.include_router(admin.Router)
+app.include_router(session.Router)
+app.include_router(object.Router)
 
 @app.get("/")
 def read_root():

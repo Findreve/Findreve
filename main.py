@@ -11,14 +11,7 @@ Copyright (c) 2018-2025 by 于小丘Yuerchu, All Rights Reserved.
 # 导入库
 from app import app
 from fastapi.staticfiles import StaticFiles
-
-from routes import (session, admin, object)
 import logging
-
-# 挂载路由
-app.include_router(admin.Router)
-app.include_router(session.Router)
-app.include_router(object.Router)
 
 # 添加静态文件目录
 try:
@@ -31,7 +24,7 @@ except RuntimeError as e:
 if __name__ == '__main__':
     import uvicorn
     uvicorn.run(
-        'main:app',
+        'app:app',
         host='0.0.0.0',
         port=8080,
         reload=True)
