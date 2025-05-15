@@ -30,16 +30,14 @@ Router = APIRouter(
     response_model=DefaultResponse,
     response_description='当前为管理员'
 )
-async def verity_admin(
-    is_admin: Annotated[str, Depends(is_admin)]
-) -> Literal[True]:
+async def verity_admin() -> DefaultResponse:
     '''
     使用 API 验证是否为管理员。
     
     - 若为管理员，返回 `True`
     - 若不是管理员，抛出 `401` 错误
     '''
-    return is_admin
+    return DefaultResponse(data=True)
 
 @Router.get(
     path='/items',

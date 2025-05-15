@@ -3,7 +3,7 @@ from typing import Literal, Optional
 
 class DefaultResponse(BaseModel):
     code: int = 0
-    data: dict | list | None = None
+    data: dict | list | bool | None = None
     msg: str = ""
 
 class ObjectData(BaseModel):

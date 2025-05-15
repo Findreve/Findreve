@@ -1,3 +1,8 @@
+# 初始化数据库
+import asyncio
+from model.database import Database
+asyncio.run(Database().init_db())
+
 # 导入库
 from app import app
 from fastapi.staticfiles import StaticFiles
