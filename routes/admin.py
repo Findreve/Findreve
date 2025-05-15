@@ -106,7 +106,7 @@ async def add_items(
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
     else:
-        return DefaultResponse()
+        return DefaultResponse(data=True)
 
 @Router.patch(
     path='/items',
@@ -151,7 +151,7 @@ async def update_items(
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
     else:
-        return DefaultResponse()
+        return DefaultResponse(data=True)
 
 @Router.delete(
     path='/items',
@@ -172,4 +172,4 @@ async def delete_items(
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
     else:
-        return DefaultResponse()
+        return DefaultResponse(data=True)
