@@ -9,3 +9,4 @@ oauth2_scheme = OAuth2PasswordBearer(
     )
 
 SECRET_KEY = asyncio.run(database.Database().get_setting('SECRET_KEY'))
+ALGORITHM = "HS256"

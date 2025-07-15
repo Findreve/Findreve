@@ -3,6 +3,8 @@ from typing import Annotated, Literal, Optional
 from fastapi import Depends, Query
 from fastapi import HTTPException
 import JWT
+import jwt
+from jwt import InvalidTokenError
 from model import database
 from model.response import DefaultResponse
 from model.items import Item
@@ -15,7 +17,22 @@ async def is_admin(token: Annotated[str, Depends(JWT.oauth2_scheme)]) -> Literal
     使用方法：
     >>> APIRouter(dependencies=[Depends(is_admin)])
     '''
-    return True
+    credentials_exception = HTTPException(
+        status_code=401,
+        detail="Could not validate credentials",
+        headers={"WWW-Authenticate": "Bearer"},
+    )
+    
+    try:
+        payload = jwt.decode(token, JWT.SECRET_KEY, algorithms=[JWT.ALGORITHM])
+        username = payload.get("sub")
+        if username is None or not await database.Database().get_setting('account') == username:
+            raise credentials_exception
+        else:
+            return True
+    except InvalidTokenError:
+        raise credentials_exception
+        
 
 Router = APIRouter(
     prefix='/api/admin', 

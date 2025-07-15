@@ -43,17 +43,9 @@
       <v-list nav>
         <v-list-item prepend-icon="mdi-view-dashboard" title="仪表盘" value="dashboard" @click="currentTab = 'dashboard'"></v-list-item>
         <v-list-item prepend-icon="mdi-tag-multiple" title="物品管理" value="items" @click="currentTab = 'items'"></v-list-item>
-        <v-list-item prepend-icon="mdi-qrcode-scan" title="生成码" value="qrcodes" @click="currentTab = 'qrcodes'"></v-list-item>
         <v-list-item prepend-icon="mdi-account-cog" title="用户设置" value="settings" @click="currentTab = 'settings'"></v-list-item>
         <v-list-item prepend-icon="mdi-information" title="关于系统" value="about" @click="currentTab = 'about'"></v-list-item>
       </v-list>
-      <template v-slot:append>
-        <div class="pa-2">
-          <v-btn block color="primary" @click="drawer = false">
-            关闭菜单
-          </v-btn>
-        </div>
-      </template>
     </v-navigation-drawer>
 
     <!-- 主内容区 -->
@@ -214,12 +206,6 @@
               </div>
             </template>
           </v-data-table>
-        </div>
-
-        <!-- 其他标签页内容 -->
-        <div v-if="currentTab === 'qrcodes'">
-          <h2 class="text-h4 mb-4">生成二维码</h2>
-          <p>此功能正在开发中...</p>
         </div>
         
         <div v-if="currentTab === 'settings'">
