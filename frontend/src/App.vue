@@ -1,5 +1,5 @@
 <script setup>
-import { ref, watch } from 'vue'
+import { ref, watch, nextTick, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 
 const router = useRouter()
@@ -30,10 +30,12 @@ watch(() => router.currentRoute.value, () => {
 checkLoginStatus()
 
 // 确保主题和样式已完全加载后再显示内容
-nextTick(() => {
-  setTimeout(() => {
-    isLoading.value = false
-  }, 200)
+onMounted(() => {
+  nextTick(() => {
+    setTimeout(() => {
+      isLoading.value = false
+    }, 200)
+  })
 })
 
 // 路由变化时的加载状态
