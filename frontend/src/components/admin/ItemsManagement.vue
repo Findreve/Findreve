@@ -1,3 +1,254 @@
+<script setup>
+import { ref, computed, watch } from 'vue'
+import apiService from '@/services/api_service'
+
+const props = defineProps({
+  items: {
+    type: Array,
+    required: true
+  }
+})
+
+const emit = defineEmits(['refresh'])
+
+// 界面控制
+const loading = ref(false)
+const search = ref('')
+const statusFilter = ref('all')
+
+// 物品管理
+const editItem = ref({
+  id: null,
+  key: '',
+  name: '',
+  icon: '',
+  phone: '',
+  status: 'ok',
+  context: ''
+})
+const defaultItem = {
+  id: null,
+  key: '',
+  name: '',
+  icon: '',
+  phone: '',
+  status: 'ok',
+  context: ''
+}
+
+// 对话框控制
+const itemDialog = ref(false)
+const deleteDialog = ref(false)
+const qrDialog = ref(false)
+const saving = ref(false)
+const deleting = ref(false)
+const formValid = ref(false)
+
+// 选中的物品和删除项
+const selectedItem = ref(null)
+const deleteItem = ref(null)
+
+// 表格配置
+const headers = [
+  { title: 'ID', key: 'id', sortable: true },
+  { title: '物品名称', key: 'name', sortable: true },
+  { title: '标识码', key: 'key', sortable: true },
+  { title: '状态', key: 'status', sortable: true },
+  { title: '创建时间', key: 'created_at', sortable: true },
+  { title: '操作', key: 'actions', sortable: false }
+]
+
+const statusOptions = [
+  { title: '全部状态', value: 'all' },
+  { title: '正常', value: 'ok' },
+  { title: '丢失', value: 'lost' }
+]
+
+/**
+ * 过滤后的物品列表
+ */
+const filteredItems = computed(() => {
+  let result = [...props.items]
+  if (statusFilter.value !== 'all') {
+    result = result.filter(item => item.status === statusFilter.value)
+  }
+  return result
+})
+
+/**
+ * 打开物品对话框
+ */
+const openItemDialog = (item = null) => {
+  editItem.value = item ? JSON.parse(JSON.stringify(item)) : JSON.parse(JSON.stringify(defaultItem))
+  if (!item) {
+    editItem.value.key = generateRandomKey()
+  }
+  itemDialog.value = true
+}
+
+/**
+ * 保存物品
+ */
+const saveItem = async () => {
+  if (!formValid.value) return
+  
+  try {
+    saving.value = true
+    let data
+    
+    if (editItem.value.id) {
+      const params = new URLSearchParams()
+      const { id, key, name, icon, phone, status, context } = editItem.value
+      
+      params.append('id', id)
+      params.append('key', key)
+      params.append('name', name)
+      params.append('icon', icon || '')
+      params.append('phone', phone)
+      params.append('status', status)
+      
+      if (status === 'lost' && context) {
+        params.append('context', context)
+      }
+      
+      data = await apiService.patch(`/api/admin/items?${params.toString()}`, '')
+    } else {
+      const params = new URLSearchParams()
+      const { key, name, icon, phone } = editItem.value
+      
+      params.append('key', key)
+      params.append('name', name)
+      params.append('icon', icon || '')
+      params.append('phone', phone)
+      
+      data = await apiService.post(`/api/admin/items?${params.toString()}`, '')
+    }
+    
+    if (data.code !== 0) {
+      throw new Error(data.msg || '保存物品失败')
+    }
+    
+    itemDialog.value = false
+    emit('refresh')
+  } catch (error) {
+    console.error('保存物品错误:', error)
+  } finally {
+    saving.value = false
+  }
+}
+
+/**
+ * 确认删除物品
+ */
+const confirmDelete = (item) => {
+  deleteItem.value = item
+  deleteDialog.value = true
+}
+
+/**
+ * 确认删除物品
+ */
+const deleteItemConfirm = async () => {
+  if (!deleteItem.value?.id) return
+  
+  try {
+    deleting.value = true
+    const data = await apiService.delete(`/api/admin/items?id=${encodeURIComponent(deleteItem.value.id)}`)
+    
+    if (data.code !== 0) {
+      throw new Error(data.msg || '删除物品失败')
+    }
+    
+    deleteDialog.value = false
+    emit('refresh')
+  } catch (error) {
+    console.error('删除物品错误:', error)
+  } finally {
+    deleting.value = false
+  }
+}
+
+/**
+ * 显示二维码
+ */
+const showQRCode = (item) => {
+  selectedItem.value = item
+  qrDialog.value = true
+}
+
+/**
+ * 获取二维码URL
+ */
+const getQRCodeUrl = (key) => {
+  const currentUrl = window.location.origin
+  const foundUrl = `${currentUrl}/found?key=${encodeURIComponent(key)}`
+  return `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(foundUrl)}`
+}
+
+/**
+ * 生成随机标识码
+ */
+const generateRandomKey = () => {
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'
+  let result = ''
+  for (let i = 0; i < 8; i++) {
+    result += chars.charAt(Math.floor(Math.random() * chars.length))
+  }
+  return result
+}
+
+/**
+ * 获取状态对应的颜色
+ */
+const getStatusColor = (status) => {
+  const statusMap = {
+    ok: "success",
+    lost: "error",
+    default: "grey"
+  }
+  return statusMap[status] || statusMap.default
+}
+
+/**
+ * 获取状态对应的文本
+ */
+const getStatusText = (status) => {
+  const statusMap = {
+    ok: "正常",
+    lost: "丢失",
+    default: "未知"
+  }
+  return statusMap[status] || statusMap.default
+}
+
+/**
+ * 格式化日期显示
+ */
+const formatDate = (dateStr) => {
+  if (!dateStr) return "未知时间"
+  try {
+    const date = new Date(dateStr)
+    return new Intl.DateTimeFormat('zh-CN', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit'
+    }).format(date)
+  } catch (e) {
+    return dateStr
+  }
+}
+
+/**
+ * 重置所有筛选条件
+ */
+const resetFilters = () => {
+  search.value = ''
+  statusFilter.value = 'all'
+}
+</script>
+
 <template>
   <div>
     <div class="d-flex justify-space-between align-center mb-4">
@@ -259,345 +510,6 @@
     </v-dialog>
   </div>
 </template>
-
-<script>
-import apiService from '@/services/api_service';
-
-export default {
-  name: 'ItemsManagementComponent',
-  
-  props: {
-    items: {
-      type: Array,
-      required: true
-    }
-  },
-  
-  data() {
-    return {
-      // 界面控制
-      loading: false,
-      search: '',
-      statusFilter: 'all',
-      
-      // 物品管理
-      editItem: {
-        id: null,
-        key: '',
-        name: '',
-        icon: '',
-        phone: '',
-        status: 'ok',
-        context: ''
-      },
-      defaultItem: {
-        id: null,
-        key: '',
-        name: '',
-        icon: '',
-        phone: '',
-        status: 'ok',
-        context: ''
-      },
-      
-      // 对话框控制
-      itemDialog: false,
-      deleteDialog: false,
-      qrDialog: false,
-      saving: false,
-      deleting: false,
-      formValid: false,
-      
-      // 选中的物品和删除项
-      selectedItem: null,
-      deleteItem: null,
-      
-      // 表格配置
-      headers: [
-        { title: 'ID', key: 'id', sortable: true },
-        { title: '物品名称', key: 'name', sortable: true },
-        { title: '标识码', key: 'key', sortable: true },
-        { title: '状态', key: 'status', sortable: true },
-        { title: '创建时间', key: 'created_at', sortable: true },
-        { title: '操作', key: 'actions', sortable: false }
-      ],
-      
-      statusOptions: [
-        { title: '全部状态', value: 'all' },
-        { title: '正常', value: 'ok' },
-        { title: '丢失', value: 'lost' }
-      ]
-    }
-  },
-  
-  computed: {
-    /**
-     * 过滤后的物品列表
-     * 
-     * 根据搜索文本和状态筛选条件过滤物品列表
-     * @returns {Array} 过滤后的物品数组
-     */
-    filteredItems() {
-      let result = [...this.items];
-      
-      // 应用状态筛选
-      if (this.statusFilter !== 'all') {
-        result = result.filter(item => item.status === this.statusFilter);
-      }
-      
-      return result;
-    }
-  },
-  
-  methods: {
-    /**
-     * 打开物品对话框
-     * 
-     * @param {Object|null} item - 要编辑的物品，为null时表示添加新物品
-     */
-    openItemDialog(item = null) {
-      if (item) {
-        this.editItem = JSON.parse(JSON.stringify(item)); // 深拷贝
-      } else {
-        this.editItem = JSON.parse(JSON.stringify(this.defaultItem));
-        // 为新物品生成一个随机标识码
-        this.editItem.key = this.generateRandomKey();
-      }
-      this.$nextTick(() => {
-        if (this.$refs.itemForm) {
-          this.$refs.itemForm.resetValidation();
-        }
-      });
-      this.itemDialog = true;
-    },
-    
-    /**
-     * 保存物品
-     * 
-     * 根据是否有ID决定是添加新物品还是更新现有物品
-     */
-    async saveItem() {
-      if (!this.formValid) return;
-      
-      try {
-        this.saving = true;
-        let data;
-        
-        if (this.editItem.id) {
-          // 更新现有物品
-          const params = new URLSearchParams();
-          const { id, key, name, icon, phone, status, context } = this.editItem;
-          
-          params.append('id', id);
-          params.append('key', key);
-          params.append('name', name);
-          params.append('icon', icon || '');
-          params.append('phone', phone);
-          params.append('status', status);
-          
-          // 只有在状态为lost且有context时，才添加context参数
-          if (status === 'lost' && context) {
-            params.append('context', context);
-          }
-          
-          data = await apiService.patch(`/api/admin/items?${params.toString()}`, '');
-          
-        } else {
-          // 添加新物品
-          const params = new URLSearchParams();
-          const { key, name, icon, phone } = this.editItem;
-          
-          params.append('key', key);
-          params.append('name', name);
-          params.append('icon', icon || '');
-          params.append('phone', phone);
-          
-          data = await apiService.post(`/api/admin/items?${params.toString()}`, '');
-        }
-        
-        if (data.code !== 0) {
-          throw new Error(data.msg || '保存物品失败');
-        }
-        
-        this.$nextTick(() => {
-          this.$root.$emit('show-toast', {
-            color: 'success',
-            message: this.editItem.id ? '物品更新成功' : '物品添加成功'
-          });
-        });
-        
-        this.itemDialog = false;
-        this.refreshItems(); // 刷新物品列表
-        
-      } catch (error) {
-        console.error('保存物品错误:', error);
-        this.$nextTick(() => {
-          this.$root.$emit('show-toast', {
-            color: 'error',
-            message: error.message || '保存物品失败'
-          });
-        });
-      } finally {
-        this.saving = false;
-      }
-    },
-    
-    /**
-     * 确认删除物品
-     * 
-     * @param {Object} item - 要删除的物品
-     */
-    confirmDelete(item) {
-      this.deleteItem = item;
-      this.deleteDialog = true;
-    },
-    
-    /**
-     * 确认删除物品
-     */
-    async deleteItemConfirm() {
-      if (!this.deleteItem || !this.deleteItem.id) return;
-      
-      try {
-        this.deleting = true;
-        
-        const data = await apiService.delete(`/api/admin/items?id=${encodeURIComponent(this.deleteItem.id)}`);
-        
-        if (data.code !== 0) {
-          throw new Error(data.msg || '删除物品失败');
-        }
-        
-        this.$nextTick(() => {
-          this.$root.$emit('show-toast', {
-            color: 'success',
-            message: '物品已成功删除'
-          });
-        });
-        
-        this.deleteDialog = false;
-        this.refreshItems(); // 刷新物品列表
-        
-      } catch (error) {
-        console.error('删除物品错误:', error);
-        this.$nextTick(() => {
-          this.$root.$emit('show-toast', {
-            color: 'error',
-            message: error.message || '删除物品失败'
-          });
-        });
-      } finally {
-        this.deleting = false;
-      }
-    },
-    
-    /**
-     * 显示二维码
-     * 
-     * @param {Object} item - 要显示二维码的物品
-     */
-    showQRCode(item) {
-      this.selectedItem = item;
-      this.qrDialog = true;
-    },
-    
-    /**
-     * 获取二维码URL
-     * 
-     * @param {string} key - 物品标识码
-     * @returns {string} 二维码图片URL
-     */
-    getQRCodeUrl(key) {
-      // 使用QR Server API生成二维码
-      const currentUrl = window.location.origin;
-      const foundUrl = `${currentUrl}/found?key=${encodeURIComponent(key)}`;
-      return `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(foundUrl)}`;
-    },
-    
-    /**
-     * 生成随机标识码
-     * 
-     * @returns {string} 随机生成的标识码
-     */
-    generateRandomKey() {
-      // 生成一个8位的随机字母数字组合
-      const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-      let result = '';
-      for (let i = 0; i < 8; i++) {
-        result += chars.charAt(Math.floor(Math.random() * chars.length));
-      }
-      return result;
-    },
-    
-    /**
-     * 获取状态对应的颜色
-     * 
-     * @param {string} status - 物品状态
-     * @returns {string} 对应的颜色名称
-     */
-    getStatusColor(status) {
-      const statusMap = {
-        ok: "success",
-        lost: "error",
-        default: "grey"
-      };
-      return statusMap[status] || statusMap.default;
-    },
-    
-    /**
-     * 获取状态对应的文本
-     * 
-     * @param {string} status - 物品状态
-     * @returns {string} 对应的状态文本
-     */
-    getStatusText(status) {
-      const statusMap = {
-        ok: "正常",
-        lost: "丢失",
-        default: "未知"
-      };
-      return statusMap[status] || statusMap.default;
-    },
-    
-    /**
-     * 格式化日期显示
-     * 
-     * @param {string} create_time - 日期字符串
-     * @returns {string} 格式化的日期文本
-     */
-    formatDate(dateStr) {
-      if (!dateStr) return "未知时间";
-      
-      try {
-        const date = new Date(dateStr);
-        return new Intl.DateTimeFormat('zh-CN', {
-          year: 'numeric',
-          month: '2-digit',
-          day: '2-digit',
-          hour: '2-digit',
-          minute: '2-digit'
-        }).format(date);
-      } catch (e) {
-        return dateStr;
-      }
-    },
-    
-    /**
-     * 重置所有筛选条件
-     */
-    resetFilters() {
-      this.search = '';
-      this.statusFilter = 'all';
-    },
-    
-    /**
-     * 刷新物品列表
-     */
-    refreshItems() {
-      this.$emit('refresh');
-    }
-  }
-};
-</script>
 
 <style scoped>
 /* 确保数据表格在移动设备上响应式滚动 */

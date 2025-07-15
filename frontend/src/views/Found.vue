@@ -1,4 +1,142 @@
-<!-- src/views/Found.vue -->
+<script setup>
+import { ref, onMounted } from 'vue'
+import apiService from '@/services/api_service'
+import storageService from '@/services/storage_service'
+
+// 响应式数据
+const key = ref(null)
+const item = ref(null)
+const loading = ref(true)
+const error = ref(null)
+const showQRDialog = ref(false)
+const isFromCache = ref(false)
+
+/**
+ * 获取状态对应的颜色
+ * @param {string} status - 物品状态
+ * @returns {string} 对应的颜色名称
+ */
+const getStatusColor = (status) => {
+  const statusMap = {
+    ok: "success",
+    lost: "error",
+    default: "grey"
+  }
+  return statusMap[status] || statusMap.default
+}
+
+/**
+ * 获取状态对应的文本
+ * @param {string} status - 物品状态
+ * @returns {string} 对应的状态文本
+ */
+const getStatusText = (status) => {
+  const statusMap = {
+    ok: "正常",
+    lost: "丢失",
+    default: "未知"
+  }
+  return statusMap[status] || statusMap.default
+}
+
+/**
+ * 格式化日期显示
+ * @param {string} dateStr - 日期字符串
+ * @returns {string} 格式化的日期文本
+ */
+const formatDate = (dateStr) => {
+  if (!dateStr) return "未知时间"
+  
+  try {
+    const date = new Date(dateStr)
+    return new Intl.DateTimeFormat('zh-CN', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit'
+    }).format(date)
+  } catch (e) {
+    return dateStr
+  }
+}
+
+/**
+ * 从缓存加载数据并获取最新数据
+ * 优先显示本地缓存的数据，同时从API获取最新数据
+ */
+const loadFromCacheAndFetch = async () => {
+  try {
+    // 先尝试从缓存获取数据
+    const cachedItem = storageService.getItemFromCache(key.value)
+    
+    if (cachedItem) {
+      // 如果有缓存，立即显示
+      item.value = cachedItem
+      isFromCache.value = true
+      loading.value = true // 保持加载状态，同时获取最新数据
+      
+      // 在后台获取最新数据
+      fetchItemDetails(true)
+    } else {
+      // 没有缓存，直接获取最新数据
+      loading.value = true
+      fetchItemDetails(false)
+    }
+  } catch (err) {
+    console.error("Error loading cached data:", err)
+    // 如果缓存加载失败，直接获取最新数据
+    fetchItemDetails(false)
+  }
+}
+
+/**
+ * 获取物品详情数据
+ * @param {boolean} isBackground - 是否在后台获取数据（已显示缓存数据）
+ */
+const fetchItemDetails = async (isBackground = false) => {
+  try {
+    if (!isBackground) {
+      loading.value = true
+    }
+    
+    const data = await apiService.getObject(key.value)
+    
+    // 更新本地缓存
+    storageService.saveItemToCache(key.value, data)
+    
+    // 更新界面数据
+    item.value = data
+    isFromCache.value = false
+    
+  } catch (err) {
+    console.error("Error fetching item details:", err)
+    
+    // 如果是后台请求且已有缓存数据显示，则不显示错误
+    if (!isBackground || !item.value) {
+      error.value = "获取物品信息失败：" + err.message
+    }
+  } finally {
+    loading.value = false
+  }
+}
+
+// 组件挂载时执行
+onMounted(() => {
+  // 从URL获取物品的key
+  const urlParams = new URLSearchParams(window.location.search)
+  key.value = urlParams.get('key')
+  
+  if (key.value) {
+    // 尝试先从缓存获取数据
+    loadFromCacheAndFetch()
+  } else {
+    loading.value = false
+    error.value = "缺少物品标识，无法获取信息"
+  }
+})
+</script>
+
 <template>
   <v-container class="found-container">
     <v-row justify="center">
@@ -114,160 +252,6 @@
     
   </v-container>
 </template>
-
-<script>
-/**
- * 物品详情页面
- * 
- * 显示找到的物品的详细信息，包括联系方式、物品状态等
- * 支持从本地缓存加载数据，提高页面加载速度
- */
-import apiService from '@/services/api_service';
-import storageService from '@/services/storage_service';
-
-export default {
-  name: "FoundView",
-  data() {
-    return {
-      key: null,
-      item: null,
-      loading: true,
-      error: null,
-      showQRDialog: false,
-      isFromCache: false, // 标识数据是否来自缓存
-    };
-  },
-  created() {
-    // 从URL获取物品的key
-    const urlParams = new URLSearchParams(window.location.search);
-    this.key = urlParams.get('key');
-    
-    if (this.key) {
-      // 尝试先从缓存获取数据
-      this.loadFromCacheAndFetch();
-    } else {
-      this.loading = false;
-      this.error = "缺少物品标识，无法获取信息";
-    }
-  },
-  methods: {
-    /**
-     * 从缓存加载数据并获取最新数据
-     * 
-     * 优先显示本地缓存的数据，同时从API获取最新数据
-     */
-    async loadFromCacheAndFetch() {
-      try {
-        // 先尝试从缓存获取数据
-        const cachedItem = storageService.getItemFromCache(this.key);
-        
-        if (cachedItem) {
-          // 如果有缓存，立即显示
-          this.item = cachedItem;
-          this.isFromCache = true;
-          this.loading = true; // 保持加载状态，同时获取最新数据
-          
-          // 在后台获取最新数据
-          this.fetchItemDetails(true);
-        } else {
-          // 没有缓存，直接获取最新数据
-          this.loading = true;
-          this.fetchItemDetails(false);
-        }
-      } catch (err) {
-        console.error("Error loading cached data:", err);
-        // 如果缓存加载失败，直接获取最新数据
-        this.fetchItemDetails(false);
-      }
-    },
-    
-    /**
-     * 获取物品详情数据
-     * 
-     * @param {boolean} isBackground - 是否在后台获取数据（已显示缓存数据）
-     */
-    async fetchItemDetails(isBackground = false) {
-      try {
-        if (!isBackground) {
-          this.loading = true;
-        }
-        
-        const data = await apiService.getObject(this.key);
-        
-        // 更新本地缓存
-        storageService.saveItemToCache(this.key, data);
-        
-        // 更新界面数据
-        this.item = data;
-        this.isFromCache = false;
-        
-      } catch (err) {
-        console.error("Error fetching item details:", err);
-        
-        // 如果是后台请求且已有缓存数据显示，则不显示错误
-        if (!isBackground || !this.item) {
-          this.error = "获取物品信息失败：" + err.message;
-        }
-      } finally {
-        this.loading = false;
-      }
-    },
-    
-    /**
-     * 获取状态对应的颜色
-     * 
-     * @param {string} status - 物品状态
-     * @returns {string} 对应的颜色名称
-     */
-    getStatusColor(status) {
-      const statusMap = {
-        ok: "success",
-        lost: "error",
-        default: "grey"
-      };
-      return statusMap[status] || statusMap.default;
-    },
-    
-    /**
-     * 获取状态对应的文本
-     * 
-     * @param {string} status - 物品状态
-     * @returns {string} 对应的状态文本
-     */
-    getStatusText(status) {
-      const statusMap = {
-        ok: "正常",
-        lost: "丢失",
-        default: "未知"
-      };
-      return statusMap[status] || statusMap.default;
-    },
-    
-    /**
-     * 格式化日期显示
-     * 
-     * @param {string} dateStr - 日期字符串
-     * @returns {string} 格式化的日期文本
-     */
-    formatDate(dateStr) {
-      if (!dateStr) return "未知时间";
-      
-      try {
-        const date = new Date(dateStr);
-        return new Intl.DateTimeFormat('zh-CN', {
-          year: 'numeric',
-          month: '2-digit',
-          day: '2-digit',
-          hour: '2-digit',
-          minute: '2-digit'
-        }).format(date);
-      } catch (e) {
-        return dateStr;
-      }
-    }
-  }
-};
-</script>
 
 <style scoped>
 .found-container {

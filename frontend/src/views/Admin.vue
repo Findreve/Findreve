@@ -1,4 +1,68 @@
-<!-- src/views/Admin.vue -->
+<script setup>
+import { ref } from 'vue'
+import { useRouter } from 'vue-router'
+import apiService from '@/services/api_service'
+import Dashboard from '@/components/admin/Dashboard.vue'
+import ItemsManagement from '@/components/admin/ItemsManagement.vue'
+import UserSettings from '@/components/admin/UserSettings.vue'
+import AboutSystem from '@/components/admin/AboutSystem.vue'
+
+const router = useRouter()
+
+// 界面控制
+const drawer = ref(false)
+const currentTab = ref('dashboard')
+const items = ref([])
+
+// 检查用户是否已登录
+const checkAuth = () => {
+  const token = localStorage.getItem('user-token')
+  if (!token) {
+    router.push({
+      path: '/login',
+      query: { redirect: router.currentRoute.value.fullPath }
+    })
+  }
+}
+
+// 获取物品列表
+const fetchItems = async () => {
+  try {
+    const data = await apiService.get('/api/admin/items')
+    
+    if (data.code === 0 && Array.isArray(data.data)) {
+      items.value = data.data
+    } else {
+      throw new Error(data.msg || '获取物品列表失败')
+    }
+  } catch (error) {
+    console.error('获取物品列表错误:', error)
+    nextTick(() => {
+      emit('show-toast', {
+        color: 'error',
+        message: error.message || '加载物品数据失败'
+      })
+    })
+  }
+}
+
+// 退出登录
+const logout = () => {
+  localStorage.removeItem('user-token')
+  router.push('/login')
+  nextTick(() => {
+    emit('show-toast', {
+      color: 'info',
+      message: '您已成功退出登录'
+    })
+  })
+}
+
+// 组件创建时执行
+checkAuth()
+fetchItems()
+</script>
+
 <template>
   <v-container fluid class="admin-container">
     <!-- 页面顶部应用栏 -->
@@ -60,103 +124,6 @@
     </v-main>
   </v-container>
 </template>
-
-<script>
-/**
- * 管理面板组件
- * 
- * 提供物品管理功能，包括添加、编辑、删除物品，
- * 以及查看物品状态和生成二维码等功能。
- * 
- * 此组件还包含仪表盘视图，显示物品统计信息和最近活动。
- */
-import apiService from '@/services/api_service';
-import Dashboard from '@/components/admin/Dashboard.vue';
-import ItemsManagement from '@/components/admin/ItemsManagement.vue';
-import UserSettings from '@/components/admin/UserSettings.vue';
-import AboutSystem from '@/components/admin/AboutSystem.vue';
-
-export default {
-  name: 'AdminView',
-  components: {
-    Dashboard,
-    ItemsManagement,
-    UserSettings,
-    AboutSystem
-  },
-  data() {
-    return {
-      // 界面控制
-      drawer: false,
-      currentTab: 'dashboard',
-      items: [], // 保存物品数据以便共享给子组件
-    }
-  },
-  
-  created() {
-    // 检查用户是否已登录
-    this.checkAuth();
-    // 获取物品列表
-    this.fetchItems();
-  },
-  
-  methods: {
-    /**
-     * 检查用户是否已登录
-     * 
-     * 如果未登录，重定向到登录页面
-     */
-    checkAuth() {
-      const token = localStorage.getItem('user-token');
-      if (!token) {
-        this.$router.push({
-          path: '/login',
-          query: { redirect: this.$route.fullPath }
-        });
-      }
-    },
-    
-    /**
-     * 获取物品列表
-     * 
-     * 从API获取所有物品数据
-     */
-    async fetchItems() {
-      try {
-        const data = await apiService.get('/api/admin/items');
-        
-        if (data.code === 0 && Array.isArray(data.data)) {
-          this.items = data.data;
-        } else {
-          throw new Error(data.msg || '获取物品列表失败');
-        }
-      } catch (error) {
-        console.error('获取物品列表错误:', error);
-        this.$nextTick(() => {
-          this.$root.$emit('show-toast', {
-            color: 'error',
-            message: error.message || '加载物品数据失败'
-          });
-        });
-      }
-    },
-    
-    /**
-     * 退出登录
-     */
-    logout() {
-      localStorage.removeItem('user-token');
-      this.$router.push('/login');
-      this.$nextTick(() => {
-        this.$root.$emit('show-toast', {
-          color: 'info',
-          message: '您已成功退出登录'
-        });
-      });
-    }
-  }
-};
-</script>
 
 <style scoped>
 .admin-container {

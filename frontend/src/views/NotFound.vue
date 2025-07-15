@@ -1,3 +1,10 @@
+<script setup>
+/**
+ * 404错误页面组件
+ * 当用户访问不存在的路由时显示此页面
+ */
+</script>
+
 <template>
   <v-container class="fill-height">
     <v-row align="center" justify="center">
@@ -27,13 +34,3 @@
     </v-row>
   </v-container>
 </template>
-
-<script>
-/**
- * 404错误页面组件
- * 当用户访问不存在的路由时显示此页面
- */
-export default {
-  name: 'NotFound'
-}
-</script>

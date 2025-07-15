@@ -1,4 +1,102 @@
-<!-- src/views/Login.vue -->
+<script setup>
+import { ref, onMounted } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
+import apiService from '@/services/api_service'
+
+const route = useRoute()
+const router = useRouter()
+
+// 表单数据
+const username = ref('')
+const password = ref('')
+const errorMessage = ref('')
+const loading = ref(false)
+const formValid = ref(false)
+const tokenExpired = ref(false)
+const checkingToken = ref(true)
+const loginForm = ref(null)
+
+// 表单验证规则
+const usernameRules = [
+  v => !!v || '用户名不能为空'
+]
+const passwordRules = [
+  v => !!v || '密码不能为空',
+  v => (v && v.length >= 6) || '密码长度不能小于6位'
+]
+
+// 验证现有令牌
+const validateExistingToken = async () => {
+  try {
+    checkingToken.value = true
+    const token = localStorage.getItem('user-token')
+    
+    if (token) {
+      const isValid = await apiService.validateToken()
+      
+      if (isValid) {
+        console.log('令牌有效，正在重定向')
+        const redirectPath = route.query.redirect || '/'
+        router.push(redirectPath)
+        return
+      } else {
+        console.log('令牌无效，已清除')
+        localStorage.removeItem('user-token')
+      }
+    }
+  } catch (error) {
+    console.error('验证令牌时出错:', error)
+  } finally {
+    checkingToken.value = false
+  }
+}
+
+// 处理用户登录
+const login = async () => {
+  const { valid } = await loginForm.value.validate()
+  if (!valid) return
+  
+  loading.value = true
+  errorMessage.value = ''
+  
+  try {
+    const result = await apiService.login(username.value, password.value)
+    
+    if (result.success) {
+      // 登录成功
+      emit('show-toast', {
+        color: 'success',
+        message: '登录成功，正在跳转...'
+      })
+      
+      // 登录成功后重定向
+      const redirectPath = route.query.redirect || '/'
+      router.push(redirectPath)
+    } else {
+      // 登录失败
+      errorMessage.value = result.error
+    }
+  } catch (error) {
+    console.error('登录错误:', error)
+    errorMessage.value = error.message || '登录过程中发生错误，请稍后再试'
+  } finally {
+    loading.value = false
+  }
+}
+
+onMounted(() => {
+  // 检查是否是因为令牌过期而重定向
+  tokenExpired.value = route.query.expired === 'true'
+  
+  // 如果不是因为令牌过期重定向，则验证令牌
+  if (!tokenExpired.value) {
+    validateExistingToken()
+  } else {
+    checkingToken.value = false
+  }
+})
+</script>
+
 <template>
   <v-container class="fill-height">
     <v-row justify="center" align="center">
@@ -83,126 +181,6 @@
     </v-row>
   </v-container>
 </template>
-
-<script>
-/**
- * 登录页面组件
- * 
- * 处理用户登录认证，成功后保存token并重定向
- * 包含表单验证、记住我功能和错误处理
- * 支持显示令牌过期的提示
- * 支持自动验证现有令牌并跳转
- */
-import apiService from '@/services/api_service';
-
-export default {
-  data() {
-    return {
-      username: '',
-      password: '',
-      errorMessage: '',
-      loading: false,
-      formValid: false,
-      tokenExpired: false,
-      checkingToken: true, // 是否正在验证令牌
-      usernameRules: [
-        v => !!v || '用户名不能为空'
-      ],
-      passwordRules: [
-        v => !!v || '密码不能为空',
-        v => (v && v.length >= 6) || '密码长度不能小于6位'
-      ]
-    }
-  },
-
-  created() {
-    // 检查是否是因为令牌过期而重定向
-    this.tokenExpired = this.$route.query.expired === 'true';
-    
-    // 如果不是因为令牌过期重定向，则验证令牌
-    if (!this.tokenExpired) {
-      this.validateExistingToken();
-    } else {
-      this.checkingToken = false;
-    }
-  },
-
-  methods: {
-    /**
-     * 验证现有令牌
-     * 
-     * 检查本地是否有JWT令牌，如果有则验证其有效性
-     * 如果令牌有效，自动重定向到目标页面
-     */
-    async validateExistingToken() {
-      try {
-        this.checkingToken = true;
-        const token = localStorage.getItem('user-token');
-        
-        // 如果有令牌，验证其有效性
-        if (token) {
-          const isValid = await apiService.validateToken();
-          
-          if (isValid) {
-            // 令牌有效，重定向到目标页面
-            console.log('令牌有效，正在重定向');
-            const redirectPath = this.$route.query.redirect || '/';
-            this.$router.push(redirectPath);
-            return;
-          } else {
-            // 令牌无效，清除
-            console.log('令牌无效，已清除');
-            localStorage.removeItem('user-token');
-          }
-        }
-      } catch (error) {
-        console.error('验证令牌时出错:', error);
-      } finally {
-        this.checkingToken = false;
-      }
-    },
-
-    /**
-     * 处理用户登录
-     * 
-     * 发送登录请求到后端API，处理成功和失败情况
-     * 支持表单验证
-     */
-    async login() {
-      // 表单验证
-      const { valid } = await this.$refs.loginForm.validate();
-      if (!valid) return;
-      
-      this.loading = true;
-      this.errorMessage = '';
-      
-      try {
-        const result = await apiService.login(this.username, this.password);
-        
-        if (result.success) {
-          // 登录成功
-          this.$root.$emit('show-toast', {
-            color: 'success',
-            message: '登录成功，正在跳转...'
-          });
-          
-          // 登录成功后重定向
-          const redirectPath = this.$route.query.redirect || '/';
-          this.$router.push(redirectPath);
-        } else {
-          // 登录失败
-          this.errorMessage = result.error;
-        }
-      } catch (error) {
-        console.error('登录错误:', error);
-        this.errorMessage = error.message || '登录过程中发生错误，请稍后再试';
-      } finally {
-        this.loading = false;
-      }
-    }
-  }
-}
-</script>
 
 <style scoped>
 .login-card {
