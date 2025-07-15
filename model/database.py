@@ -17,7 +17,12 @@ from typing import Optional
 
 # 数据库类
 class Database:
-    def __init__(self, db_path: str = "data.db"):
+    
+    # Database 初始化方法
+    def __init__(
+        self,                       # self 用于引用类的实例
+        db_path: str = "data.db"    # db_path 数据库文件路径，默认为 data.db
+    ):
         self.db_path = db_path
 
     async def init_db(self):
