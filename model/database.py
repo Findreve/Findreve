@@ -79,6 +79,7 @@ class Database:
                         ('string', 'account', account)
                     )
                     logging.info(f"插入初始账号信息: {account}")
+                    print(f"账号: {account}")
 
             async with db.execute("SELECT name FROM fr_settings WHERE name = 'password'") as cursor:
                 if not await cursor.fetchone():
