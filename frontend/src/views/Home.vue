@@ -1,3 +1,243 @@
+<script setup>
+import { ref, onMounted, computed } from 'vue'
+import storageService from '@/services/storage_service'
+
+// 缓存相关状态
+const isFromCache = ref(false)
+const showCacheAlert = ref(false)
+const refreshing = ref(false)
+const cacheTimestamp = ref(null)
+
+// 本地存储键名
+const HOME_CACHE_KEY = 'home-data'
+
+// 格式化缓存时间
+const formatCacheTime = computed(() => {
+  if (!cacheTimestamp.value) return ''
+  
+  try {
+    const date = new Date(cacheTimestamp.value)
+    return new Intl.DateTimeFormat('zh-CN', {
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit'
+    }).format(date)
+  } catch (e) {
+    return '未知时间'
+  }
+})
+
+// 从服务加载主页数据
+const fetchHomeData = async () => {
+  await new Promise(resolve => setTimeout(resolve, 800))
+  return {
+    socialLinks,
+    devSkills,
+    designSkills,
+    musicSkills,
+    projects,
+    musicWorks,
+    timeline
+  }
+}
+
+// 从本地存储加载数据
+const loadFromCache = () => {
+  try {
+    const cachedItem = storageService.getItemFromCache(HOME_CACHE_KEY)
+    
+    if (cachedItem) {
+      const cachedTimestamp = storageService.getCacheTimestamp(HOME_CACHE_KEY)
+      if (cachedTimestamp) {
+        cacheTimestamp.value = cachedTimestamp
+        isFromCache.value = true
+        showCacheAlert.value = true
+      }
+      console.log('Using cached home page data')
+      return true
+    }
+  } catch (error) {
+    console.error('Error loading cached data:', error)
+  }
+  return false
+}
+
+// 保存数据到本地存储
+const saveToCache = async () => {
+  try {
+    const currentData = await fetchHomeData()
+    storageService.saveItemToCache(HOME_CACHE_KEY, currentData)
+    console.log('Home page data cached')
+  } catch (error) {
+    console.error('Error saving data to cache:', error)
+  }
+}
+
+// 刷新数据
+const refreshData = async () => {
+  refreshing.value = true
+  try {
+    const newData = await fetchHomeData()
+    storageService.saveItemToCache(HOME_CACHE_KEY, newData)
+    isFromCache.value = false
+    showCacheAlert.value = false
+    console.log('Home data refreshed successfully')
+  } catch (error) {
+    console.error('Error refreshing home data:', error)
+  } finally {
+    refreshing.value = false
+  }
+}
+
+// 组件挂载时执行
+onMounted(async () => {
+  const hasCachedData = loadFromCache()
+  
+  if (!hasCachedData) {
+    try {
+      await fetchHomeData()
+      saveToCache()
+    } catch (error) {
+      console.error('Error fetching initial home data:', error)
+    }
+  }
+})
+
+// 静态数据定义
+
+// 社交媒体链接
+const socialLinks = [
+  { icon: 'mdi-github', url: 'https://github.com/Yuerchu' },
+  { icon: 'mdi-music', url: 'https://music.163.com/#/artist?id=48986728' },
+  { icon: 'mdi-web', url: 'https://www.yxqi.cn' },
+  { icon: 'mdi-email', url: 'mailto:admin@yuxiaoqiu.cn' },
+];
+
+// 开发技能
+const devSkills = [
+  { name: 'Python', color: 'amber-darken-1' },
+  { name: 'Kotlin', color: 'purple-lighten-2' },
+  { name: 'Golang', color: 'light-blue' },
+  { name: 'Lua', color: 'blue-darken-4' },
+  { name: 'C', color: 'red' },
+  { name: 'HTML/CSS', color: 'red-darken-3' },
+  { name: 'JavaScript', color: 'lime-darken-3' },
+  { name: 'Git', color: 'amber-darken-3' },
+  { name: 'Docker', color: 'light-blue-darken-1' },
+];
+
+// 设计技能
+const designSkills = [
+  { name: 'Photoshop', color: 'blue-darken-4' },
+  { name: 'Premiere', color: 'indigo-darken-3' },
+  { name: 'After Effects', color: 'indigo-darken-4' },
+  { name: 'Audition', color: 'purple-darken-4' },
+  { name: 'Illustrator', color: 'amber-darken-3' },
+  { name: 'UI/UX', color: 'pink-darken-2' },
+  { name: 'SAI2', color: 'grey-darken-3' },
+];
+
+// 音乐技能
+const musicSkills = [
+  { name: 'FL Studio', color: 'orange-darken-2' },
+  { name: '作曲', color: 'deep-purple' },
+  { name: '编曲', color: 'indigo' },
+  { name: '混音', color: 'blue' },
+  { name: '母带处理', color: 'teal' },
+  { name: 'Midi创作', color: 'cyan' },
+];
+
+// 项目作品
+const projects = [
+  {
+    title: 'DiskNext',
+    tag: 'B端系统',
+    tagColor: 'primary',
+    image: 'https://cdn.vuetifyjs.com/images/cards/sunshine.jpg',
+    description: '基于 NiceGUI 打造的高性能网盘系统，提供快速、安全的文件存储与分享服务。',
+    link: 'https://pan.yxqi.cn',
+    tech: ['Python', 'NiceGUI', 'SQLite', 'Docker']
+  },
+  {
+    title: 'Findreve',
+    tag: 'C端应用',
+    tagColor: 'success',
+    image: 'https://cdn.vuetifyjs.com/images/cards/road.jpg',
+    description: '个人主页与物品丢失找回系统，帮助用户追踪和找回丢失物品。',
+    link: 'https://i.yxqi.cn',
+    tech: ['Vue', 'Vuetify', 'FastAPI', 'MySQL']
+  },
+  {
+    title: 'HeyAuth',
+    tag: 'B+C端系统',
+    tagColor: 'info',
+    image: 'https://cdn.vuetifyjs.com/images/cards/plane.jpg',
+    description: '多应用授权系统，提供统一的身份验证和权限管理服务。',
+    link: 'https://auth.yxqi.cn',
+    tech: ['Python', 'JWT', 'OAuth2', 'Redis']
+  }
+];
+
+// 音乐作品
+const musicWorks = [
+  {
+    title: '与枫同奔 Run With Fun',
+    tag: '词曲',
+    description: '我愿如流星赶月那样飞奔，向着远方的梦想不断前行。',
+    link: 'https://music.163.com/#/song?id=2148944359',
+    cover: 'https://cdn.vuetifyjs.com/images/cards/foster.jpg'
+  },
+  {
+    title: 'HeyFun\'s Story',
+    tag: '自设印象曲',
+    description: '飞奔在星辰大海之间的少年，勇敢探索未知的世界。',
+    link: 'https://music.163.com/#/song?id=1889436124',
+    cover: 'https://cdn.vuetifyjs.com/images/cards/house.jpg'
+  },
+  {
+    title: '2020Fall',
+    tag: '年度纯音乐',
+    description: '耗时6个月完成的年度纯音乐作品，记录2020年的回忆。',
+    link: 'https://music.163.com/#/song?id=1863630345',
+    cover: 'https://cdn.vuetifyjs.com/images/cards/store.jpg'
+  }
+];
+
+// 时间线
+const timeline = [
+  {
+    title: '梦开始的地方',
+    date: '2022年1月21日',
+    content: '购买了第一台服务器，并搭建了第一个 Wordpress 站点，开始了我的网络创作之旅。',
+    color: 'primary',
+    icon: 'mdi-server'
+  },
+  {
+    title: '音乐作品发布',
+    date: '2023年10月29日',
+    content: '在网易云音乐发布了收官作《与枫同奔 Release》，截止到 2025 年 4 月 21 日获得了 7000+ 播放。',
+    color: 'deep-purple',
+    icon: 'mdi-music'
+  },
+  {
+    title: '自建生态计划开始',
+    date: '2024年3月1日',
+    content: '从 Cloudreve 项目脱离，开始自建网盘系统 DiskNext ，迈出了建立个人技术生态的第一步。',
+    color: 'amber',
+    icon: 'mdi-cloud'
+  },
+  {
+    title: '当前进展',
+    date: '现在',
+    content: '目前正在开发 HeyAuth、Findreve、DiskNext 三个核心系统，构建完整的个人应用生态。',
+    color: 'success',
+    icon: 'mdi-rocket'
+  }
+];
+
+</script>
+
 <template>
   <v-container fluid>
     <!-- 顶部封面区 -->
@@ -278,303 +518,6 @@
     </v-footer>
   </v-container>
 </template>
-
-<script setup lang="ts">
-/**
- * 首页视图组件
- *
- * 这是一个现代化的个人主页视图，包含个人介绍、技能展示、项目展示、
- * 音乐作品、时间线和联系方式等部分，采用响应式设计适配各种设备。
- * 支持本地数据缓存，提升用户体验。
- */
-import { ref, onMounted, computed } from 'vue';
-import storageService from '@/services/storage_service';
-
-// 缓存相关状态
-const isFromCache = ref(false);
-const showCacheAlert = ref(false);
-const refreshing = ref(false);
-const cacheTimestamp = ref<number | null>(null);
-
-// 本地存储键名
-const HOME_CACHE_KEY = 'home-data';
-
-// 格式化缓存时间
-const formatCacheTime = computed(() => {
-  if (!cacheTimestamp.value) return '';
-  
-  try {
-    const date = new Date(cacheTimestamp.value);
-    return new Intl.DateTimeFormat('zh-CN', {
-      month: '2-digit',
-      day: '2-digit',
-      hour: '2-digit',
-      minute: '2-digit'
-    }).format(date);
-  } catch (e) {
-    return '未知时间';
-  }
-});
-
-/**
- * 从服务加载主页数据
- * 
- * 在实际应用中，这里应该是API请求
- * 目前仅为模拟API请求的示例函数
- * @returns {Promise<Object>} 首页数据对象
- */
-const fetchHomeData = async (): Promise<any> => {
-  // 模拟API延迟
-  await new Promise(resolve => setTimeout(resolve, 800));
-  
-  // 在真实应用中，这里应该是API调用
-  // const response = await fetch('/api/home');
-  // return response.json();
-  
-  // 这里使用静态数据模拟API返回
-  return {
-    socialLinks,
-    devSkills,
-    designSkills,
-    musicSkills,
-    projects,
-    musicWorks,
-    timeline
-  };
-};
-
-/**
- * 从本地存储加载数据
- * 
- * 使用统一的存储服务获取缓存的首页数据
- * 如果数据存在且未过期，则使用缓存数据
- */
-const loadFromCache = () => {
-  try {
-    // 从统一存储服务获取缓存数据
-    const cachedItem = storageService.getItemFromCache(HOME_CACHE_KEY);
-    
-    if (cachedItem) {
-      // 找到有效缓存
-      
-      // 在实际应用中，可以使用缓存数据更新组件状态
-      // updateComponentState(cachedItem);
-      
-      // 获取缓存时间戳以显示在UI上
-      const cachedTimestamp = storageService.getCacheTimestamp(HOME_CACHE_KEY);
-      if (cachedTimestamp) {
-        cacheTimestamp.value = cachedTimestamp;
-        isFromCache.value = true;
-        showCacheAlert.value = true;
-      }
-      
-      console.log('Using cached home page data');
-      return true;
-    }
-  } catch (error) {
-    console.error('Error loading cached data:', error);
-  }
-  
-  return false;
-};
-
-/**
- * 保存数据到本地存储
- * 
- * 将首页当前状态保存到统一存储服务中
- */
-const saveToCache = async () => {
-  try {
-    // 在实际应用中，这里应该获取当前组件的最新状态
-    // 或者直接缓存API返回的数据
-    const currentData = await fetchHomeData();
-    
-    // 使用存储服务保存数据
-    storageService.saveItemToCache(HOME_CACHE_KEY, currentData);
-    console.log('Home page data cached');
-  } catch (error) {
-    console.error('Error saving data to cache:', error);
-  }
-};
-
-/**
- * 刷新数据
- * 
- * 从服务器获取最新数据并更新缓存
- */
-const refreshData = async () => {
-  refreshing.value = true;
-  
-  try {
-    // 从服务器获取最新数据
-    const newData = await fetchHomeData();
-    
-    // 在实际应用中，需要用新数据更新组件状态
-    // updateComponentWithNewData(newData);
-    
-    // 更新缓存
-    storageService.saveItemToCache(HOME_CACHE_KEY, newData);
-    
-    // 更新UI状态
-    isFromCache.value = false;
-    showCacheAlert.value = false;
-    
-    console.log('Home data refreshed successfully');
-  } catch (error) {
-    console.error('Error refreshing home data:', error);
-  } finally {
-    refreshing.value = false;
-  }
-};
-
-// 在组件挂载时尝试加载缓存数据，无论是否有缓存都保存当前状态
-onMounted(async () => {
-  // 尝试加载缓存数据
-  const hasCachedData = loadFromCache();
-  
-  // 如果没有缓存数据或缓存已过期，获取新数据并保存
-  if (!hasCachedData) {
-    try {
-      // 模拟API请求
-      await fetchHomeData();
-      // 保存到缓存
-      saveToCache();
-    } catch (error) {
-      console.error('Error fetching initial home data:', error);
-    }
-  }
-});
-
-// 社交媒体链接
-const socialLinks = [
-  { icon: 'mdi-github', url: 'https://github.com/Yuerchu' },
-  { icon: 'mdi-music', url: 'https://music.163.com/#/artist?id=48986728' },
-  { icon: 'mdi-web', url: 'https://www.yxqi.cn' },
-  { icon: 'mdi-email', url: 'mailto:admin@yuxiaoqiu.cn' },
-];
-
-// 开发技能
-const devSkills = [
-  { name: 'Python', color: 'amber-darken-1' },
-  { name: 'Kotlin', color: 'purple-lighten-2' },
-  { name: 'Golang', color: 'light-blue' },
-  { name: 'Lua', color: 'blue-darken-4' },
-  { name: 'C', color: 'red' },
-  { name: 'HTML/CSS', color: 'red-darken-3' },
-  { name: 'JavaScript', color: 'lime-darken-3' },
-  { name: 'Git', color: 'amber-darken-3' },
-  { name: 'Docker', color: 'light-blue-darken-1' },
-];
-
-// 设计技能
-const designSkills = [
-  { name: 'Photoshop', color: 'blue-darken-4' },
-  { name: 'Premiere', color: 'indigo-darken-3' },
-  { name: 'After Effects', color: 'indigo-darken-4' },
-  { name: 'Audition', color: 'purple-darken-4' },
-  { name: 'Illustrator', color: 'amber-darken-3' },
-  { name: 'UI/UX', color: 'pink-darken-2' },
-  { name: 'SAI2', color: 'grey-darken-3' },
-];
-
-// 音乐技能
-const musicSkills = [
-  { name: 'FL Studio', color: 'orange-darken-2' },
-  { name: '作曲', color: 'deep-purple' },
-  { name: '编曲', color: 'indigo' },
-  { name: '混音', color: 'blue' },
-  { name: '母带处理', color: 'teal' },
-  { name: 'Midi创作', color: 'cyan' },
-];
-
-// 项目作品
-const projects = [
-  {
-    title: 'DiskNext',
-    tag: 'B端系统',
-    tagColor: 'primary',
-    image: 'https://cdn.vuetifyjs.com/images/cards/sunshine.jpg',
-    description: '基于 NiceGUI 打造的高性能网盘系统，提供快速、安全的文件存储与分享服务。',
-    link: 'https://pan.yxqi.cn',
-    tech: ['Python', 'NiceGUI', 'SQLite', 'Docker']
-  },
-  {
-    title: 'Findreve',
-    tag: 'C端应用',
-    tagColor: 'success',
-    image: 'https://cdn.vuetifyjs.com/images/cards/road.jpg',
-    description: '个人主页与物品丢失找回系统，帮助用户追踪和找回丢失物品。',
-    link: 'https://i.yxqi.cn',
-    tech: ['Vue', 'Vuetify', 'FastAPI', 'MySQL']
-  },
-  {
-    title: 'HeyAuth',
-    tag: 'B+C端系统',
-    tagColor: 'info',
-    image: 'https://cdn.vuetifyjs.com/images/cards/plane.jpg',
-    description: '多应用授权系统，提供统一的身份验证和权限管理服务。',
-    link: 'https://auth.yxqi.cn',
-    tech: ['Python', 'JWT', 'OAuth2', 'Redis']
-  }
-];
-
-// 音乐作品
-const musicWorks = [
-  {
-    title: '与枫同奔 Run With Fun',
-    tag: '词曲',
-    description: '我愿如流星赶月那样飞奔，向着远方的梦想不断前行。',
-    link: 'https://music.163.com/#/song?id=2148944359',
-    cover: 'https://cdn.vuetifyjs.com/images/cards/foster.jpg'
-  },
-  {
-    title: 'HeyFun\'s Story',
-    tag: '自设印象曲',
-    description: '飞奔在星辰大海之间的少年，勇敢探索未知的世界。',
-    link: 'https://music.163.com/#/song?id=1889436124',
-    cover: 'https://cdn.vuetifyjs.com/images/cards/house.jpg'
-  },
-  {
-    title: '2020Fall',
-    tag: '年度纯音乐',
-    description: '耗时6个月完成的年度纯音乐作品，记录2020年的回忆。',
-    link: 'https://music.163.com/#/song?id=1863630345',
-    cover: 'https://cdn.vuetifyjs.com/images/cards/store.jpg'
-  }
-];
-
-// 时间线
-const timeline = [
-  {
-    title: '梦开始的地方',
-    date: '2022年1月21日',
-    content: '购买了第一台服务器，并搭建了第一个 Wordpress 站点，开始了我的网络创作之旅。',
-    color: 'primary',
-    icon: 'mdi-server'
-  },
-  {
-    title: '音乐作品发布',
-    date: '2023年10月29日',
-    content: '在网易云音乐发布了收官作《与枫同奔 Release》，截止到 2025 年 4 月 21 日获得了 7000+ 播放。',
-    color: 'deep-purple',
-    icon: 'mdi-music'
-  },
-  {
-    title: '自建生态计划开始',
-    date: '2024年3月1日',
-    content: '从 Cloudreve 项目脱离，开始自建网盘系统 DiskNext ，迈出了建立个人技术生态的第一步。',
-    color: 'amber',
-    icon: 'mdi-cloud'
-  },
-  {
-    title: '当前进展',
-    date: '现在',
-    content: '目前正在开发 HeyAuth、Findreve、DiskNext 三个核心系统，构建完整的个人应用生态。',
-    color: 'success',
-    icon: 'mdi-rocket'
-  }
-];
-</script>
 
 <style scoped>
 .max-width-text {

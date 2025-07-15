@@ -1,3 +1,18 @@
+<script setup>
+import CacheStatus from '@/components/CacheStatus.vue'
+
+const userInfo = {
+  username: 'admin',
+  email: 'admin@example.com'
+}
+
+const settings = {
+  darkMode: false,
+  notifications: true
+}
+</script>
+
+
 <template>
   <div>
     <h2 class="text-h4 mb-4">用户设置</h2>
@@ -68,26 +83,3 @@
     <p class="text-caption text-center mt-4">更多设置功能正在开发中...</p>
   </div>
 </template>
-
-<script>
-import CacheStatus from '@/components/CacheStatus.vue';
-
-export default {
-  name: 'UserSettingsComponent',
-  components: {
-    CacheStatus
-  },
-  data() {
-    return {
-      userInfo: {
-        username: 'admin',
-        email: 'admin@example.com'
-      },
-      settings: {
-        darkMode: false,
-        notifications: true
-      }
-    }
-  }
-};
-</script>

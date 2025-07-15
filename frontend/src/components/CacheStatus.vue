@@ -1,3 +1,75 @@
+<script setup>
+import { ref, onMounted } from 'vue'
+import storageService from '@/services/storage_service'
+
+const cachedItemsCount = ref(0)
+const lastCleanTime = ref(null)
+const cacheMessage = ref('')
+const cacheMessageType = ref('info')
+const clearing = ref(false)
+
+/**
+ * 格式化日期显示
+ * @param {Date} date - 日期对象
+ * @returns {string} 格式化的日期字符串
+ */
+const formatDate = (date) => {
+  if (!date) return ''
+  try {
+    return new Intl.DateTimeFormat('zh-CN', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit'
+    }).format(date)
+  } catch (e) {
+    return date.toString()
+  }
+}
+
+/**
+ * 更新缓存信息
+ */
+const updateCacheInfo = () => {
+  try {
+    const allItems = storageService.getAllCachedItems()
+    cachedItemsCount.value = Object.keys(allItems).length
+    
+    const cleanTimeStr = localStorage.getItem('findreve-last-clean-time')
+    lastCleanTime.value = cleanTimeStr ? new Date(parseInt(cleanTimeStr)) : null
+  } catch (error) {
+    console.error('获取缓存信息失败', error)
+  }
+}
+
+/**
+ * 清除所有缓存
+ */
+const clearCache = async () => {
+  clearing.value = true
+  try {
+    await new Promise(resolve => setTimeout(resolve, 600))
+    storageService.clearAllCache()
+    localStorage.setItem('findreve-last-clean-time', Date.now().toString())
+    updateCacheInfo()
+    cacheMessage.value = '缓存已成功清除'
+    cacheMessageType.value = 'success'
+  } catch (error) {
+    console.error('清除缓存失败', error)
+    cacheMessage.value = '清除缓存失败: ' + error.message
+    cacheMessageType.value = 'error'
+  } finally {
+    clearing.value = false
+  }
+}
+
+onMounted(() => {
+  updateCacheInfo()
+})
+</script>
+
 <template>
   <v-card class="my-3">
     <v-card-title class="d-flex align-center">
@@ -41,96 +113,3 @@
     </v-card-text>
   </v-card>
 </template>
-
-<script>
-/**
- * 缓存状态组件
- * 
- * 显示当前本地缓存的状态信息，支持清除缓存
- */
-import storageService from '@/services/storage_service';
-
-export default {
-  name: 'CacheStatus',
-  
-  data() {
-    return {
-      cachedItemsCount: 0,
-      lastCleanTime: null,
-      cacheMessage: '',
-      cacheMessageType: 'info',
-      clearing: false
-    }
-  },
-  
-  created() {
-    this.updateCacheInfo();
-  },
-  
-  methods: {
-    /**
-     * 更新缓存信息
-     */
-    updateCacheInfo() {
-      try {
-        const allItems = storageService.getAllCachedItems();
-        this.cachedItemsCount = Object.keys(allItems).length;
-        
-        // 获取上次清理时间（这里需要在storage_service中添加记录）
-        const cleanTimeStr = localStorage.getItem('findreve-last-clean-time');
-        this.lastCleanTime = cleanTimeStr ? new Date(parseInt(cleanTimeStr)) : null;
-      } catch (error) {
-        console.error('获取缓存信息失败', error);
-      }
-    },
-    
-    /**
-     * 清除所有缓存
-     */
-    async clearCache() {
-      this.clearing = true;
-      
-      try {
-        // 小延迟以显示加载效果
-        await new Promise(resolve => setTimeout(resolve, 600));
-        
-        storageService.clearAllCache();
-        localStorage.setItem('findreve-last-clean-time', Date.now().toString());
-        
-        this.updateCacheInfo();
-        this.cacheMessage = '缓存已成功清除';
-        this.cacheMessageType = 'success';
-      } catch (error) {
-        console.error('清除缓存失败', error);
-        this.cacheMessage = '清除缓存失败: ' + error.message;
-        this.cacheMessageType = 'error';
-      } finally {
-        this.clearing = false;
-      }
-    },
-    
-    /**
-     * 格式化日期显示
-     * 
-     * @param {Date} date - 日期对象
-     * @returns {string} 格式化的日期字符串
-     */
-    formatDate(date) {
-      if (!date) return '';
-      
-      try {
-        return new Intl.DateTimeFormat('zh-CN', {
-          year: 'numeric',
-          month: '2-digit',
-          day: '2-digit',
-          hour: '2-digit',
-          minute: '2-digit',
-          second: '2-digit'
-        }).format(date);
-      } catch (e) {
-        return date.toString();
-      }
-    }
-  }
-}
-</script>

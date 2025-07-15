@@ -1,3 +1,12 @@
+<script setup>
+const systemInfo = {
+  version: '2.0.0 Alpha',
+  releaseDate: '2025-07-15',
+  framework: 'FastAPI + Vue'
+}
+</script>
+
+
 <template>
   <div>
     <h2 class="text-h4 mb-4">关于 Findreve</h2>
@@ -62,18 +71,3 @@
     </v-card>
   </div>
 </template>
-
-<script>
-export default {
-  name: 'AboutSystemComponent',
-  data() {
-    return {
-      systemInfo: {
-        version: '2.0.0 Alpha',
-        releaseDate: '2025-07-15',
-        framework: 'FastAPI + Vue'
-      }
-    }
-  }
-};
-</script>
