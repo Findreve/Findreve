@@ -3,6 +3,7 @@ import { ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import apiService from '@/services/api_service'
 
+const emit = defineEmits(['show-toast'])
 const route = useRoute()
 const router = useRouter()
 
