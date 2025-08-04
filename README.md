@@ -41,7 +41,7 @@ Run the following command to start Findreve:
 
 > python main.py
 
-您可能需要准备 Findreve 的前端文件才可正常启动。
+您需要准备 Findreve 的前端文件才可正常启动。
 
 <!--
 

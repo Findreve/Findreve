@@ -1,0 +1,14 @@
+{
+	"folders": [
+		{
+			"path": "."
+		},
+		{
+			"path": "../Findreve-frontend-vue"
+		},
+		{
+			"path": "../Findreve-NiceGUI"
+		}
+	],
+	"settings": {}
+}
