@@ -3,6 +3,7 @@ import binascii
 import logging
 from datetime import datetime, timezone
 import os
+import secrets
 
 def format_phone(
     phone: str, 
@@ -96,7 +97,7 @@ def verify_password(
     pwdhash = binascii.hexlify(pwdhash).decode('ascii')
     if debug:
         logging.info(f"原密码: {provided_password}, 哈希值: {pwdhash}, 存储哈希值: {stored_password}")
-    return pwdhash == stored_password
+    return secrets.compare_digest(pwdhash, stored_password)
 
 def format_time_diff(
     target_time: datetime | str

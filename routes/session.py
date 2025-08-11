@@ -1,7 +1,7 @@
 # 导入库
 from typing import Annotated
 from datetime import datetime, timedelta, timezone
-from fastapi import Depends, HTTPException, status
+from fastapi import Depends, HTTPException
 from fastapi.security import OAuth2PasswordRequestForm
 from fastapi import APIRouter
 import jwt, JWT
