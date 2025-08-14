@@ -1,19 +1,27 @@
-'''
-Author: 于小丘 海枫
-Date: 2024-10-02 15:23:34
-LastEditors: Yuerchu admin@yuxiaoqiu.cn
-LastEditTime: 2024-11-29 20:05:03
-FilePath: /Findreve/model.py
-Description: Findreve 数据库组件 model
-
-Copyright (c) 2018-2024 by 于小丘Yuerchu, All Rights Reserved. 
-'''
-
 import aiosqlite
 from datetime import datetime
-import tool
-import logging
 from typing import Optional
+
+from sqlmodel import SQLModel
+from sqlalchemy.ext.asyncio import AsyncEngine, create_async_engine
+from sqlmodel.ext.asyncio.session import AsyncSession
+from sqlalchemy.orm import sessionmaker
+from typing import AsyncGenerator
+
+ASYNC_DATABASE_URL = "sqlite+aiosqlite:///data.db"
+
+engine: AsyncEngine = create_async_engine(
+    ASYNC_DATABASE_URL,
+    echo=True,
+    connect_args={
+        "check_same_thread": False
+    } if ASYNC_DATABASE_URL.startswith("sqlite") else None,
+    future=True,
+    # pool_size=POOL_SIZE,
+    # max_overflow=64,
+)
+
+_async_session_factory = sessionmaker(engine, class_=AsyncSession)
 
 # 数据库类
 class Database:
@@ -24,90 +32,18 @@ class Database:
         db_path: str = "data.db"    # db_path 数据库文件路径，默认为 data.db
     ):
         self.db_path = db_path
+    
+    async def get_session() -> AsyncGenerator[AsyncSession, None]:
+        async with _async_session_factory() as session:
+            yield session
 
-    async def init_db(self):
-        """初始化数据库和表"""
-        logging.info("开始初始化数据库和表")
-        
-        create_objects_table = """
-        CREATE TABLE IF NOT EXISTS fr_objects (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            key TEXT NOT NULL,
-            name TEXT NOT NULL,
-            icon TEXT,
-            status TEXT,
-            phone TEXT,
-            context TEXT,
-            find_ip TEXT,
-            create_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            lost_at TIMESTAMP
-        )
-        """
-        
-        create_settings_table = """
-        CREATE TABLE IF NOT EXISTS fr_settings (
-            type TEXT,
-            name TEXT PRIMARY KEY,
-            value TEXT
-        )
-        """
-        
-        async with aiosqlite.connect(self.db_path) as db:
-            logging.info("连接到数据库")
-            await db.execute(create_objects_table)
-            logging.info("创建或验证fr_objects表")
-            await db.execute(create_settings_table)
-            logging.info("创建或验证fr_settings表")
-            
-            # 初始化设置表数据
-            async with db.execute("SELECT name FROM fr_settings WHERE name = 'version'") as cursor:
-                if not await cursor.fetchone():
-                    await db.execute(
-                        "INSERT INTO fr_settings (type, name, value) VALUES (?, ?, ?)",
-                        ('string', 'version', '1.0.0')
-                    )
-                    logging.info("插入初始版本信息: version 1.0.0")
-
-            async with db.execute("SELECT name FROM fr_settings WHERE name = 'ver'") as cursor:
-                if not await cursor.fetchone():
-                    await db.execute(
-                        "INSERT INTO fr_settings (type, name, value) VALUES (?, ?, ?)", 
-                        ('int', 'ver', '1')
-                    )
-                    logging.info("插入初始版本号: ver 1")
-
-            async with db.execute("SELECT name FROM fr_settings WHERE name = 'account'") as cursor:
-                if not await cursor.fetchone():
-                    account = 'admin@yuxiaoqiu.cn'
-                    await db.execute(
-                        "INSERT INTO fr_settings (type, name, value) VALUES (?, ?, ?)", 
-                        ('string', 'account', account)
-                    )
-                    logging.info(f"插入初始账号信息: {account}")
-                    print(f"账号: {account}")
-
-            async with db.execute("SELECT name FROM fr_settings WHERE name = 'password'") as cursor:
-                if not await cursor.fetchone():
-                    password = tool.generate_password()
-                    hashed_password = tool.hash_password(password)
-                    await db.execute(
-                        "INSERT INTO fr_settings (type, name, value) VALUES (?, ?, ?)",
-                        ('string', 'password', hashed_password)
-                    )
-                    logging.info("插入初始密码信息")
-                    print(f"密码（请牢记，后续不再显示）: {password}")
-            
-            async with db.execute("SELECT name FROM fr_settings WHERE name = 'SECRET_KEY'") as cursor:
-                if not await cursor.fetchone():
-                    secret_key = tool.generate_password(64)
-                    await db.execute(
-                        "INSERT INTO fr_settings (type, name, value) VALUES (?, ?, ?)",
-                        ('string', 'SECRET_KEY', secret_key)
-                    )
-                    logging.info("插入初始密钥信息")
-            
-            await db.commit()
-            logging.info("数据库初始化完成并提交更改")
+    async def init_db(
+        self,
+        url: str = ASYNC_DATABASE_URL
+        ):
+        """创建数据库结构"""
+        async with engine.begin() as conn:
+            await conn.run_sync(SQLModel.metadata.create_all)
     
     async def add_object(self, key: str, name: str, icon: str = None, phone: str = None):
         """
