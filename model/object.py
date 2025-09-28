@@ -2,10 +2,8 @@
 
 from typing import Literal, Optional, TYPE_CHECKING
 from sqlmodel import Field, Column, SQLModel, String, DateTime
-from .base import BaseModel
+from .base import TableBase, IdMixin
 from datetime import datetime
-
-from .base import BaseModel
 
 """
 原建表语句：
@@ -26,7 +24,7 @@ CREATE TABLE IF NOT EXISTS fr_objects (
 if TYPE_CHECKING:
     pass
 
-class Object(SQLModel, BaseModel, table=True):
+class Object(IdMixin, TableBase, table=True):
     __tablename__ = 'fr_objects'
 
     key: str = Field(index=True, nullable=False, description="物品外部ID")

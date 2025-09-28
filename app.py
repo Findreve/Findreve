@@ -5,20 +5,10 @@ from contextlib import asynccontextmanager
 from routes import (session, admin, object)
 import model.database
 import os, asyncio
+import pkg.conf
 
 # 初始化数据库
 asyncio.run(model.database.Database().init_db())
-
-# 定义程序参数
-APP_NAME: str = 'Findreve'
-VERSION: str = '2.0.0'
-summary='标记、追踪与找回 —— 就这么简单。'
-description='Findreve 是一款强大且直观的解决方案，旨在帮助您管理个人物品，'\
-            '并确保丢失后能够安全找回。每个物品都会被分配一个 唯一 ID ，'\
-            '并生成一个 安全链接 ，可轻松嵌入到 二维码 或 NFC 标签 中。'\
-            '当扫描该代码时，会将拾得者引导至一个专门的网页，上面显示物品详情和您的联系信息，'\
-            '既保障隐私又便于沟通。无论您是在管理个人物品还是专业资产，'\
-            'Findreve 都能以高效、简便的方式弥合丢失与找回之间的距离。'
 
 # Findreve 的生命周期
 @asynccontextmanager
@@ -28,10 +18,10 @@ async def lifespan(app: FastAPI):
 
 # 定义 Findreve 服务器
 app = FastAPI(
-    title=APP_NAME,
-    version=VERSION,
-    summary=summary,
-    description=description,
+    title=pkg.conf.APP_NAME,
+    version=pkg.conf.VERSION,
+    summary=pkg.conf.summary,
+    description=pkg.conf.description,
     lifespan=lifespan
 )
 

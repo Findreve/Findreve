@@ -1,3 +1,4 @@
+from contextlib import asynccontextmanager
 import aiosqlite
 from datetime import datetime
 from typing import Optional
@@ -7,6 +8,9 @@ from sqlalchemy.ext.asyncio import AsyncEngine, create_async_engine
 from sqlmodel.ext.asyncio.session import AsyncSession
 from sqlalchemy.orm import sessionmaker
 from typing import AsyncGenerator
+
+import warnings
+from .migration import migration
 
 ASYNC_DATABASE_URL = "sqlite+aiosqlite:///data.db"
 
@@ -21,7 +25,7 @@ engine: AsyncEngine = create_async_engine(
     # max_overflow=64,
 )
 
-_async_session_factory = sessionmaker(engine, class_=AsyncSession)
+_async_session_factory = sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
 
 # 数据库类
 class Database:
@@ -33,6 +37,8 @@ class Database:
     ):
         self.db_path = db_path
     
+    @staticmethod
+    @asynccontextmanager
     async def get_session() -> AsyncGenerator[AsyncSession, None]:
         async with _async_session_factory() as session:
             yield session
@@ -44,6 +50,9 @@ class Database:
         """创建数据库结构"""
         async with engine.begin() as conn:
             await conn.run_sync(SQLModel.metadata.create_all)
+        
+        async with self.get_session() as session:
+            await migration(session)  # 执行迁移脚本
     
     async def add_object(self, key: str, name: str, icon: str = None, phone: str = None):
         """
@@ -54,6 +63,9 @@ class Database:
         :param icon: 图标
         :param phone: 电话
         """
+        
+        warnings.warn("因需要迁移至ORM，此方法已被废弃", DeprecationWarning)
+        
         async with aiosqlite.connect(self.db_path) as db:
             async with db.execute("SELECT 1 FROM fr_objects WHERE key = ?", (key,)) as cursor:
                 if await cursor.fetchone():

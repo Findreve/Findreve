@@ -8,6 +8,9 @@
 		},
 		{
 			"path": "../Findreve-NiceGUI"
+		},
+		{
+			"path": "../vein-based-iov-simulator-main"
 		}
 	],
 	"settings": {}
