@@ -67,6 +67,9 @@ Upon launch, Findreve will create a SQLite database in the project's root direct
 display the administrator's account and password in the console.
 
 ## 构建
+
+> 当前版本的 Findreve Core 无法正常工作，因为我们正在尝试[重构数据库组件以使用ORM](https://github.com/Findreve/Findreve/issues/8)
+
 你需要安装Python 3.8 以上的版本。然后，clone 本仓库到您的服务器并解压，然后安装下面的依赖：
 
 You need to have Python 3.8 or higher installed on your server. Then, clone this repository

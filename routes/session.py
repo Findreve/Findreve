@@ -7,7 +7,7 @@ from fastapi import APIRouter
 import jwt, JWT
 
 from model.token import Token
-from model import database
+from model import Setting, database
 from tool import verify_password
 
 Router = APIRouter(tags=["令牌 session"])
@@ -26,8 +26,8 @@ def create_access_token(data: dict, expires_delta: timedelta | None = None):
 # 验证账号密码
 async def authenticate_user(username: str, password: str):
     # 验证账号和密码
-    account = await database.Database().get_setting('account')
-    stored_password = await database.Database().get_setting('password')
+    account = await Setting.get('setting', 'account')
+    stored_password = await Setting.get('setting', 'password')
 
     if account != username or not verify_password(stored_password, password):
         return False
