@@ -11,7 +11,7 @@ asyncio.run(model.database.Database().init_db())
 
 # 定义程序参数
 APP_NAME: str = 'Findreve'
-VERSION: str = '2.0.0'
+VERSION: str = '2.0.0-ootc'
 summary='标记、追踪与找回 —— 就这么简单。'
 description='Findreve 是一款强大且直观的解决方案，旨在帮助您管理个人物品，'\
             '并确保丢失后能够安全找回。每个物品都会被分配一个 唯一 ID ，'\
@@ -42,11 +42,16 @@ app.include_router(object.Router)
 
 @app.get("/")
 def read_root():
+    if not os.path.exists("dist/index.html"):
+        raise HTTPException(status_code=404, detail="Frontend not built. Please build the frontend first.")
     return FileResponse("dist/index.html")
 
 # 回退路由
 @app.get("/{path:path}")
 async def serve_spa(request: Request, path: str):
+    if not os.path.exists("dist/index.html"):
+        raise HTTPException(status_code=404, detail="Frontend not built. Please build the frontend first.")
+    
     # 排除API路由
     if path.startswith("api/"):
         raise HTTPException(status_code=404, detail="Not Found")

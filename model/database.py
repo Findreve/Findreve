@@ -13,7 +13,7 @@ import aiosqlite
 from datetime import datetime
 import tool
 import logging
-from typing import Optional
+from typing import Literal, Optional
 
 # 数据库类
 class Database:
@@ -32,6 +32,7 @@ class Database:
         create_objects_table = """
         CREATE TABLE IF NOT EXISTS fr_objects (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
+            type TEXT NOT NULL,
             key TEXT NOT NULL,
             name TEXT NOT NULL,
             icon TEXT,
@@ -109,10 +110,18 @@ class Database:
             await db.commit()
             logging.info("数据库初始化完成并提交更改")
     
-    async def add_object(self, key: str, name: str, icon: str = None, phone: str = None):
+    async def add_object(
+        self, 
+        key: str, 
+        type: Literal['normal', 'car'],
+        name: str, 
+        icon: str = None, 
+        phone: str = None,
+    ):
         """
         添加新对象
         
+        :param type: 对象类型
         :param key: 序列号
         :param name: 名称
         :param icon: 图标
@@ -126,14 +135,15 @@ class Database:
             now = datetime.now()
             now = now.strftime("%Y-%m-%d %H:%M:%S")
             await db.execute(
-                "INSERT INTO fr_objects (key, name, icon, phone, create_at, status) VALUES (?, ?, ?, ?, ?, 'ok')",
-                (key, name, icon, phone, now)
+                "INSERT INTO fr_objects (key, name, icon, phone, create_at, status, type) VALUES (?, ?, ?, ?, ?, 'ok', ?)",
+                (key, name, icon, phone, now, type)
             )
             await db.commit()
     
     async def update_object(
         self, 
         id: int,
+        type: Literal['normal', 'car'] = None,
         key: str = None,
         name: str = None,
         icon: str = None,
@@ -141,11 +151,13 @@ class Database:
         phone: int = None,
         lost_description: Optional[str] = None,
         find_ip: Optional[str] = None,
-        lost_time: Optional[str] = None):
+        lost_time: Optional[str] = None
+    ):
         """
         更新对象信息
         
         :param id: 对象ID
+        :param type: 对象类型
         :param key: 序列号
         :param name: 名称
         :param icon: 图标
@@ -173,13 +185,18 @@ class Database:
                 f"phone = COALESCE(?, phone), "
                 f"context = COALESCE(?, context), "
                 f"find_ip = COALESCE(?, find_ip), "
-                f"lost_at = COALESCE(?, lost_at) "
+                f"lost_at = COALESCE(?, lost_at), "
+                f"type = COALESCE(?, type) "
                 f"WHERE id = ?",
-                (key, name, icon, status, phone, lost_description, find_ip, lost_time, id)
+                (key, name, icon, status, phone, lost_description, find_ip, lost_time, type, id)
             )
             await db.commit()
     
-    async def get_object(self, id: int = None, key: str = None):
+    async def get_object(
+        self, 
+        id: int = None, 
+        key: str = None
+    ):
         """
         获取对象
         

@@ -80,17 +80,19 @@ async def get_items(
             items = results
         item = []
         for i in items:
+            print(i)
             item.append(Item(
                 id=i[0],
-                key=i[1],
-                name=i[2],
-                icon=i[3],
-                status=i[4],
-                phone=i[5],
-                lost_description=i[6],
-                find_ip=i[7],
-                create_time=i[8],
-                lost_time=i[9]
+                type=i[1],
+                key=i[2],
+                name=i[3],
+                icon=i[4],
+                status=i[5],
+                phone=i[6],
+                lost_description=i[7],
+                find_ip=i[8],
+                create_time=i[9],
+                lost_time=i[10]
             ))
         return DefaultResponse(data=item)
     else:
@@ -105,13 +107,16 @@ async def get_items(
 )
 async def add_items(
     key: str,
+    type: Literal['normal', 'car'],
     name: str,
     icon: str,
-    phone: str) -> DefaultResponse:
+    phone: str
+) -> DefaultResponse:
     '''
     添加物品信息。
     
     - **key**: 物品的关键字
+    - **type**: 物品的类型
     - **name**: 物品的名称
     - **icon**: 物品的图标
     - **phone**: 联系电话
@@ -119,7 +124,12 @@ async def add_items(
     
     try:
         await database.Database().add_object(
-            key=key, name=name, icon=icon, phone=phone)
+            key=key, 
+            type=type,
+            name=name, 
+            icon=icon, 
+            phone=phone
+        )
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
     else:

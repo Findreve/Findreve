@@ -8,6 +8,7 @@ class DefaultResponse(BaseModel):
 
 class ObjectData(BaseModel):
     id: int
+    type: Literal['normal', 'car']
     key: str
     name: str
     icon: str
