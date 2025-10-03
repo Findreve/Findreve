@@ -8,9 +8,13 @@ class DefaultResponse(BaseModel):
 
 class ObjectData(BaseModel):
     id: int
+    type: Literal['normal', 'car']
     key: str
     name: str
     icon: str
     status: Literal['ok', 'lost']
     phone: str
-    context: Optional[str] = None
+    context: str | None = None
+    lost_description: str | None = None
+    create_time: str
+    lost_time: str | None = None

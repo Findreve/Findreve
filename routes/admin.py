@@ -1,5 +1,5 @@
 from fastapi import APIRouter
-from typing import Annotated, Literal, Optional
+from typing import Annotated, Literal
 from fastapi import Depends, Query
 from fastapi import HTTPException
 import JWT
@@ -8,9 +8,14 @@ from jwt import InvalidTokenError
 from model import database
 from model.response import DefaultResponse
 from model.items import Item
+from sqlmodel.ext.asyncio.session import AsyncSession
+from model import Setting
 
 # 验证是否为管理员
-async def is_admin(token: Annotated[str, Depends(JWT.oauth2_scheme)]) -> Literal[True]:
+async def is_admin(
+        token: Annotated[str, Depends(JWT.oauth2_scheme)],
+        session: Annotated[AsyncSession, Depends(database.Database.get_session)]
+) -> Literal[True]:
     '''
     验证是否为管理员。
     
@@ -24,9 +29,9 @@ async def is_admin(token: Annotated[str, Depends(JWT.oauth2_scheme)]) -> Literal
     )
     
     try:
-        payload = jwt.decode(token, JWT.SECRET_KEY, algorithms=[JWT.ALGORITHM])
+        payload = jwt.decode(token, JWT.get_secret_key(), algorithms=[JWT.ALGORITHM])
         username = payload.get("sub")
-        if username is None or not await database.Database().get_setting('account') == username:
+        if username is None or not await Setting.get(session, Setting.name == 'account') == username:
             raise credentials_exception
         else:
             return True
@@ -64,8 +69,8 @@ async def verity_admin() -> DefaultResponse:
     response_description='物品信息列表'
 )
 async def get_items(
-    id: Optional[int] = Query(default=None, ge=1, description='物品ID'),
-    key: Optional[str] = Query(default=None, description='物品序列号')):
+    id: int | None = Query(default=None, ge=1, description='物品ID'),
+    key: str | None = Query(default=None, description='物品序列号')):
     '''
     获得物品信息。
     
@@ -82,15 +87,16 @@ async def get_items(
         for i in items:
             item.append(Item(
                 id=i[0],
-                key=i[1],
-                name=i[2],
-                icon=i[3],
-                status=i[4],
-                phone=i[5],
-                lost_description=i[6],
-                find_ip=i[7],
-                create_time=i[8],
-                lost_time=i[9]
+                type=i[1],
+                key=i[2],
+                name=i[3],
+                icon=i[4],
+                status=i[5],
+                phone=i[6],
+                lost_description=i[7],
+                find_ip=i[8],
+                create_time=i[9],
+                lost_time=i[10]
             ))
         return DefaultResponse(data=item)
     else:
@@ -105,13 +111,16 @@ async def get_items(
 )
 async def add_items(
     key: str,
+    type: Literal['normal', 'car'],
     name: str,
     icon: str,
-    phone: str) -> DefaultResponse:
+    phone: str
+) -> DefaultResponse:
     '''
     添加物品信息。
     
     - **key**: 物品的关键字
+    - **type**: 物品的类型
     - **name**: 物品的名称
     - **icon**: 物品的图标
     - **phone**: 联系电话
@@ -119,7 +128,12 @@ async def add_items(
     
     try:
         await database.Database().add_object(
-            key=key, name=name, icon=icon, phone=phone)
+            key=key, 
+            type=type,
+            name=name, 
+            icon=icon, 
+            phone=phone
+        )
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
     else:
@@ -134,14 +148,15 @@ async def add_items(
 )
 async def update_items(
     id: int = Query(ge=1),
-    key: Optional[str] = None,
-    name: Optional[str] = None,
-    icon: Optional[str] = None,
-    status: Optional[str] = None,
-    phone: Optional[int] = None,
-    lost_description: Optional[str] = None,
-    find_ip: Optional[str] = None,
-    lost_time: Optional[str] = None) -> DefaultResponse:
+    key: str | None = None,
+    name: str | None = None,
+    icon: str | None = None,
+    status: str | None = None,
+    phone: int | None = None,
+    lost_description: str | None = None,
+    find_ip: str | None = None,
+    lost_time: str | None = None
+    ) -> DefaultResponse:
     '''
     更新物品信息。
     

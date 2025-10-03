@@ -3,6 +3,7 @@ from typing import Optional
 
 class Item(BaseModel):
     id: int
+    type: str
     key: str
     name: str
     icon: str

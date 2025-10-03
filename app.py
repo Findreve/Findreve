@@ -32,11 +32,16 @@ app.include_router(object.Router)
 
 @app.get("/")
 def read_root():
+    if not os.path.exists("dist/index.html"):
+        raise HTTPException(status_code=404, detail="Frontend not built. Please build the frontend first.")
     return FileResponse("dist/index.html")
 
 # 回退路由
 @app.get("/{path:path}")
 async def serve_spa(request: Request, path: str):
+    if not os.path.exists("dist/index.html"):
+        raise HTTPException(status_code=404, detail="Frontend not built. Please build the frontend first.")
+    
     # 排除API路由
     if path.startswith("api/"):
         raise HTTPException(status_code=404, detail="Not Found")
