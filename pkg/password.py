@@ -9,7 +9,7 @@ class Password():
 
     @staticmethod
     def generate(
-    length: int = 8
+        length: int = 8
     ) -> str:
         """
         生成指定长度的随机密码。

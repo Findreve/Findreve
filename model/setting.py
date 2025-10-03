@@ -1,15 +1,5 @@
-# model/setting.py
 from sqlmodel import Field
 from .base import TableBase
-
-"""
-原表：
-CREATE TABLE IF NOT EXISTS fr_settings (
-    type TEXT,
-    name TEXT PRIMARY KEY,
-    value TEXT
-)
-"""
 
 class Setting(TableBase, table=True):
 

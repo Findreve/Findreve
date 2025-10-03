@@ -6,7 +6,7 @@ from fastapi.security import OAuth2PasswordRequestForm
 from fastapi import APIRouter
 import jwt, JWT
 from sqlmodel.ext.asyncio.session import AsyncSession
-from pkg.password import Password
+from pkg import Password
 from loguru import logger
 
 from model.token import Token

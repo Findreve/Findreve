@@ -1,6 +1,8 @@
 # ~/models/database.py
 from contextlib import asynccontextmanager
 from typing import AsyncGenerator
+import os
+from dotenv import load_dotenv
 
 from sqlalchemy.ext.asyncio import AsyncEngine, create_async_engine
 from sqlalchemy.orm import sessionmaker
@@ -9,11 +11,17 @@ from sqlmodel.ext.asyncio.session import AsyncSession
 
 from .migration import migration
 
-ASYNC_DATABASE_URL = "sqlite+aiosqlite:///data.db"
+# 加载环境变量
+load_dotenv('.env')
+
+# 获取 DEBUG 配置
+DEBUG = os.getenv("DEBUG", "false").lower() in ("true", "1", "yes")
+
+ASYNC_DATABASE_URL = os.getenv("DATABASE_URL", "sqlite+aiosqlite:///data.db")
 
 engine: AsyncEngine = create_async_engine(
     ASYNC_DATABASE_URL,
-    echo=True,
+    echo=DEBUG,  # 根据 DEBUG 配置决定是否输出 SQL 日志
     connect_args={
         "check_same_thread": False
     } if ASYNC_DATABASE_URL.startswith("sqlite") else {},

@@ -1,5 +1,3 @@
-# my_project/models/download.py
-
 from typing import Literal
 from sqlmodel import Field, Column, String, DateTime
 from .base import TableBase, IdMixin
