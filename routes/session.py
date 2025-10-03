@@ -6,7 +6,7 @@ from fastapi.security import OAuth2PasswordRequestForm
 from fastapi import APIRouter
 import jwt, JWT
 from sqlmodel.ext.asyncio.session import AsyncSession
-from tool import verify_password
+from pkg.password import Password
 from loguru import logger
 
 from model.token import Token
@@ -35,7 +35,7 @@ async def authenticate_user(session: AsyncSession, username: str, password: str)
         logger.error("Account or password not set in settings.")
         return False
 
-    if account.value != username or not verify_password(stored_password.value, password):
+    if account.value != username or not Password.verify(stored_password.value, password):
         logger.error("Invalid username or password.")
         return False
     

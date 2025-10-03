@@ -68,7 +68,7 @@ async def notify_move_car(
 
     Args:
         item_id (int): 物品ID / Item ID
-        phone (str, optional): 挪车发起者电话 / Phone number of the person initiating the move. Defaults to None.
+        phone (str): 挪车发起者电话 / Phone number of the person initiating the move. Defaults to None.
     """
     db = Database()
     await db.init_db()

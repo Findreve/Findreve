@@ -1,9 +1,4 @@
-import hashlib
-import binascii
-import logging
 from datetime import datetime, timezone
-import os
-import secrets
 
 def format_phone(
     phone: str, 
@@ -35,69 +30,6 @@ def format_phone(
         start += length
         
     return separator.join(result)
-
-def generate_password(
-    length: int = 8
-    ) -> str:
-    """
-    生成指定长度的随机密码。
-    
-    :param length: 密码长度
-    :type length: int
-    :return: 随机密码
-    :rtype: str
-    """
-    import secrets
-    
-    return secrets.token_hex(length)
-
-def hash_password(
-    password: str
-    ) -> str:
-    """
-    生成密码的加盐哈希值。
-
-    :param password: 需要哈希的原始密码
-    :type password: str
-    :return: 包含盐值和哈希值的字符串
-    :rtype: str
-
-    使用SHA-256和PBKDF2算法对密码进行加盐哈希,返回盐值和哈希值的组合。
-    """
-    salt = hashlib.sha256(os.urandom(60)).hexdigest().encode('ascii')
-    pwdhash = hashlib.pbkdf2_hmac('sha256', password.encode('utf-8'), salt, 100000)
-    pwdhash = binascii.hexlify(pwdhash)
-    return (salt + pwdhash).decode('ascii')
-
-def verify_password(
-    stored_password: str, 
-    provided_password: str, 
-    debug: bool = False
-    ) -> bool:
-    """
-    验证存储的密码哈希值与用户提供的密码是否匹配。
-
-    :param stored_password: 存储的密码哈希值(包含盐值)
-    :type stored_password: str
-    :param provided_password: 用户提供的密码
-    :type provided_password: str
-    :param debug: 是否输出调试信息，将会输出原密码和哈希值
-    :type debug: bool
-    :return: 如果密码匹配返回True,否则返回False
-    :rtype: bool
-
-    从存储的密码哈希中提取盐值,使用相同的哈希算法验证用户提供的密码。
-    """
-    salt = stored_password[:64]
-    stored_password = stored_password[64:]
-    pwdhash = hashlib.pbkdf2_hmac('sha256', 
-                                  provided_password.encode('utf-8'), 
-                                  salt.encode('ascii'), 
-                                  100000)
-    pwdhash = binascii.hexlify(pwdhash).decode('ascii')
-    if debug:
-        logging.info(f"原密码: {provided_password}, 哈希值: {pwdhash}, 存储哈希值: {stored_password}")
-    return secrets.compare_digest(pwdhash, stored_password)
 
 def format_time_diff(
     target_time: datetime | str

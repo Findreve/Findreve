@@ -1,5 +1,5 @@
 from pydantic import BaseModel
-from typing import Literal, Optional
+from typing import Literal
 
 class DefaultResponse(BaseModel):
     code: int = 0

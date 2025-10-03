@@ -42,12 +42,25 @@ class Database:
         async with _async_session_factory() as session:
             yield session
 
+    @staticmethod
+    @asynccontextmanager
+    async def session_context() -> AsyncGenerator[AsyncSession, None]:
+        """
+        提供异步上下文管理器用于直接获取数据库会话
+        
+        使用示例:
+            async with Database.session_context() as session:
+                # 执行数据库操作
+                pass
+        """
+        async with _async_session_factory() as session:
+            yield session
+
     async def init_db(self, url: str = ASYNC_DATABASE_URL):
         """创建数据库结构"""
         async with engine.begin() as conn:
             await conn.run_sync(SQLModel.metadata.create_all)
 
         # For internal use, create a temporary context manager
-        get_session_cm = asynccontextmanager(self.get_session)
-        async with get_session_cm() as session:
+        async with self.session_context() as session:
             await migration(session)  # 执行迁移脚本

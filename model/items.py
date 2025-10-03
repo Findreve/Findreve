@@ -1,5 +1,4 @@
 from pydantic import BaseModel
-from typing import Optional
 
 class Item(BaseModel):
     id: int
@@ -9,8 +8,7 @@ class Item(BaseModel):
     icon: str
     status: str
     phone: int
-    lost_description: Optional[str]
-    find_ip: Optional[str]
+    lost_description: str | None
+    find_ip: str | None
     create_time: str
-    lost_time: Optional[str]
-    
+    lost_time: str | None

@@ -22,7 +22,7 @@ async def get_secret_key() -> str:
     global _SECRET_KEY_CACHE
     
     if _SECRET_KEY_CACHE is None:
-        async with Database.get_session() as session:
+        async with Database.session_context() as session:
             setting = await Setting.get(
                 session=session,
                 condition=(Setting.name == 'SECRET_KEY')

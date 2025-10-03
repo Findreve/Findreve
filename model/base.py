@@ -1,6 +1,6 @@
 # model/base.py
 from datetime import datetime, timezone
-from typing import Optional, Type, TypeVar, Union, Literal, List
+from typing import Type, TypeVar, Union, Literal, List
 
 from sqlalchemy import DateTime, BinaryExpression, ClauseElement
 from sqlalchemy.orm import selectinload
@@ -27,7 +27,7 @@ class TableBase(AsyncAttrs, SQLModel):
         sa_column_kwargs={"default": utcnow, "onupdate": utcnow},
         default_factory=utcnow
     )
-    deleted_at: Optional[datetime] = Field(
+    deleted_at: datetime | None = Field(
         default=None,
         description="删除时间",
         sa_column={"nullable": True}
@@ -148,4 +148,4 @@ class TableBase(AsyncAttrs, SQLModel):
 
 # 需要“自增 id 主键”的模型才混入它；Setting 不混入
 class IdMixin(SQLModel):
-    id: Optional[int] = Field(default=None, primary_key=True, description="主键ID")
+    id: int | None = Field(default=None, primary_key=True, description="主键ID")

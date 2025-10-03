@@ -1,7 +1,7 @@
 from loguru import logger
 from sqlmodel import select
 from .setting import Setting
-import tool
+from pkg.password import Password
 
 default_settings: list[Setting] = [
     Setting(type='string', name='version', value='1.0.0'),
@@ -18,11 +18,11 @@ async def migration(session):
         return
 
     # 生成初始密码与密钥
-    admin_password = tool.generate_password()
+    admin_password = Password.generate()
     logger.warning(f"密码（请牢记，后续不再显示）: {admin_password}")
 
-    settings.append(Setting(type='string', name='password',   value=tool.hash_password(admin_password)))
-    settings.append(Setting(type='string', name='SECRET_KEY', value=tool.generate_password(64)))
+    settings.append(Setting(type='string', name='password',   value=Password.hash(admin_password)))
+    settings.append(Setting(type='string', name='SECRET_KEY', value=Password.generate(64)))
 
     # 读取库里已存在的 name，避免主键冲突
     names = [s.name for s in settings]

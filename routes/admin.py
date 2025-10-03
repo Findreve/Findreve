@@ -10,11 +10,12 @@ from model.response import DefaultResponse
 from model.items import Item
 from sqlmodel.ext.asyncio.session import AsyncSession
 from model import Setting
+from model.object import Object
 
 # 验证是否为管理员
 async def is_admin(
         token: Annotated[str, Depends(JWT.oauth2_scheme)],
-        session: Annotated[AsyncSession, Depends(database.Database.get_session)]
+        session: Annotated[AsyncSession, Depends(database.Database.get_session)],
 ) -> Literal[True]:
     '''
     验证是否为管理员。
@@ -29,9 +30,10 @@ async def is_admin(
     )
     
     try:
-        payload = jwt.decode(token, JWT.get_secret_key(), algorithms=[JWT.ALGORITHM])
+        payload = jwt.decode(token, await JWT.get_secret_key(), algorithms=[JWT.ALGORITHM])
         username = payload.get("sub")
-        if username is None or not await Setting.get(session, Setting.name == 'account') == username:
+        stored_account = await Setting.get(session, Setting.name == 'account')
+        if username is None or not stored_account.value == username:
             raise credentials_exception
         else:
             return True
@@ -69,6 +71,7 @@ async def verity_admin() -> DefaultResponse:
     response_description='物品信息列表'
 )
 async def get_items(
+    session: Annotated[AsyncSession, Depends(database.Database.get_session)],
     id: int | None = Query(default=None, ge=1, description='物品ID'),
     key: str | None = Query(default=None, description='物品序列号')):
     '''
@@ -76,29 +79,33 @@ async def get_items(
     
     不传参数返回所有信息，否则可传入 `id` 或 `key` 进行筛选。
     '''
-    results = await database.Database().get_object(id=id, key=key)
+    # 根据条件查询物品
+    if id is not None:
+        results = await Object.get(session, Object.id == id)
+        results = [results] if results else []
+    elif key is not None:
+        results = await Object.get(session, Object.key == key)
+        results = [results] if results else []
+    else:
+        results = await Object.get(session, None, fetch_mode="all")
     
-    if results is not None:
-        if not isinstance(results, list):
-            items = [results]
-        else:
-            items = results
-        item = []
-        for i in items:
-            item.append(Item(
-                id=i[0],
-                type=i[1],
-                key=i[2],
-                name=i[3],
-                icon=i[4],
-                status=i[5],
-                phone=i[6],
-                lost_description=i[7],
-                find_ip=i[8],
-                create_time=i[9],
-                lost_time=i[10]
+    if results:
+        items = []
+        for obj in results:
+            items.append(Item(
+                id=obj.id,
+                type=obj.type,
+                key=obj.key,
+                name=obj.name,
+                icon=obj.icon or "",
+                status=obj.status or "",
+                phone=int(obj.phone) if obj.phone and obj.phone.isdigit() else 0,
+                lost_description=obj.context,
+                find_ip=obj.find_ip,
+                create_time=obj.created_at.isoformat(),
+                lost_time=obj.lost_at.isoformat() if obj.lost_at else None
             ))
-        return DefaultResponse(data=item)
+        return DefaultResponse(data=items)
     else:
         return DefaultResponse(data=[])
 
@@ -110,6 +117,7 @@ async def get_items(
     response_description='添加物品成功'
 )
 async def add_items(
+    session: Annotated[AsyncSession, Depends(database.Database.get_session)],
     key: str,
     type: Literal['normal', 'car'],
     name: str,
@@ -127,13 +135,16 @@ async def add_items(
     '''
     
     try:
-        await database.Database().add_object(
-            key=key, 
+        # 创建新物品对象
+        new_object = Object(
+            key=key,
             type=type,
-            name=name, 
-            icon=icon, 
+            name=name,
+            icon=icon,
             phone=phone
         )
+        # 使用 base.py 中的 add 方法
+        await Object.add(session, new_object)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
     else:
@@ -147,6 +158,7 @@ async def add_items(
     response_description='更新物品成功'
 )
 async def update_items(
+    session: Annotated[AsyncSession, Depends(database.Database.get_session)],
     id: int = Query(ge=1),
     key: str | None = None,
     name: str | None = None,
@@ -174,12 +186,32 @@ async def update_items(
     
     '''
     try:
-        await database.Database().update_object(
-            id=id,
-            key=key, name=name, icon=icon, status=status, phone=phone,
-            lost_description=lost_description, find_ip=find_ip,
-            lost_time=lost_time
-        )
+        # 获取现有物品
+        obj = await Object.get_exist_one(session, id)
+        
+        # 更新字段
+        if key is not None:
+            obj.key = key
+        if name is not None:
+            obj.name = name
+        if icon is not None:
+            obj.icon = icon
+        if status is not None:
+            obj.status = status
+        if phone is not None:
+            obj.phone = str(phone)
+        if lost_description is not None:
+            obj.context = lost_description
+        if find_ip is not None:
+            obj.find_ip = find_ip
+        if lost_time is not None:
+            from datetime import datetime
+            obj.lost_at = datetime.fromisoformat(lost_time)
+        
+        # 保存更新
+        await obj.save(session)
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
     else:
@@ -193,6 +225,7 @@ async def update_items(
     response_description='删除物品成功'
 )
 async def delete_items(
+    session: Annotated[AsyncSession, Depends(database.Database.get_session)],
     id: int) -> DefaultResponse:
     '''
     删除物品信息。
@@ -200,7 +233,12 @@ async def delete_items(
     - **id**: 物品的ID
     '''
     try:
-        await database.Database().delete_object(id=id)
+        # 获取现有物品
+        obj = await Object.get_exist_one(session, id)
+        # 使用 base.py 中的 delete 方法
+        await Object.delete(session, obj)
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
     else:
