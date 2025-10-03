@@ -35,7 +35,7 @@ async def authenticate_user(session: AsyncSession, username: str, password: str)
         logger.error("Account or password not set in settings.")
         return False
 
-    if account != username or not verify_password(stored_password.value, password):
+    if account.value != username or not verify_password(stored_password.value, password):
         logger.error("Invalid username or password.")
         return False
     
