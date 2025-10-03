@@ -1,4 +1,4 @@
-from typing import Sequence
+from loguru import logger
 from sqlmodel import select
 from .setting import Setting
 import tool
@@ -13,9 +13,13 @@ async def migration(session):
     # 先准备基础配置
     settings: list[Setting] = default_settings.copy()
 
+    if await Setting.get(session, Setting.name == 'version'):
+        # 已有数据，说明不是第一次运行，直接返回
+        return
+
     # 生成初始密码与密钥
     admin_password = tool.generate_password()
-    print(f"密码（请牢记，后续不再显示）: {admin_password}")
+    logger.warning(f"密码（请牢记，后续不再显示）: {admin_password}")
 
     settings.append(Setting(type='string', name='password',   value=tool.hash_password(admin_password)))
     settings.append(Setting(type='string', name='SECRET_KEY', value=tool.generate_password(64)))

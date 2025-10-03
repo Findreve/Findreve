@@ -14,4 +14,7 @@ class ObjectData(BaseModel):
     icon: str
     status: Literal['ok', 'lost']
     phone: str
-    context: Optional[str] = None
+    context: str | None = None
+    lost_description: str | None = None
+    create_time: str
+    lost_time: str | None = None
