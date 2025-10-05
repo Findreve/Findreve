@@ -1,20 +1,15 @@
+from datetime import datetime
+
 from pydantic import BaseModel
-from typing import Literal
 
 class DefaultResponse(BaseModel):
     code: int = 0
-    data: dict | list | bool | None = None
+    data: dict | list | bool | None
     msg: str = ""
 
-class ObjectData(BaseModel):
-    id: int
-    type: Literal['normal', 'car']
-    key: str
-    name: str
-    icon: str
-    status: Literal['ok', 'lost']
-    phone: str
-    context: str | None = None
-    lost_description: str | None = None
-    create_time: str
-    lost_time: str | None = None
+# FastAPI 鉴权返回模型
+class TokenResponse(BaseModel):
+    access_token: str
+
+class TokenData(BaseModel):
+    username: str | None = None

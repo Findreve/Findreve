@@ -1,8 +1,19 @@
 from sqlmodel import Field
-from .base import TableBase
+from .base import TableBase, SQLModelBase
 
-class Setting(TableBase, table=True):
 
-    type: str = Field(index=True, nullable=False, description="设置类型")
-    name: str = Field(primary_key=True, nullable=False, description="设置名称")  # name 为唯一主键
-    value: str | None = Field(description="设置值")
+class SettingBase(SQLModelBase):
+    type: str = Field(index=True)
+    """设置类型"""
+
+    name: str = Field(index=True, unique=True)  # name 为唯一主键
+    """设置名称"""
+
+    value: str | None
+    """设置值"""
+
+class Setting(SettingBase, TableBase, table=True):
+    pass
+
+class SettingResponse(SettingBase):
+    pass

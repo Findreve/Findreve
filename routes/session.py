@@ -9,18 +9,23 @@ from sqlmodel.ext.asyncio.session import AsyncSession
 from pkg import Password
 from loguru import logger
 
-from model.token import Token
 from model import Setting, User, database
+from model.response import TokenResponse
 
 Router = APIRouter(tags=["令牌 session"])
 
-# 创建令牌
-async def create_access_token(session: AsyncSession, data: dict, expires_delta: timedelta | None = None):
+# 创建访问令牌
+async def create_access_token(
+        session: AsyncSession,
+        data: dict,
+        expires_delta: timedelta | None = None
+):
     to_encode = data.copy()
     if expires_delta:
         expire = datetime.now(timezone.utc) + expires_delta
     else:
-        expire = datetime.now(timezone.utc) + timedelta(minutes=await Setting.get(session, 'jwt_token_exp'))
+        jwt_exp_setting = await Setting.get(session, Setting.name == 'jwt_token_exp')
+        expire = datetime.now(timezone.utc) + timedelta(int(jwt_exp_setting.value))
     to_encode.update({"exp": expire})
     encoded_jwt = jwt.encode(to_encode, key=await JWT.get_secret_key(), algorithm='HS256')
     return encoded_jwt
@@ -45,13 +50,13 @@ async def authenticate_user(session: AsyncSession, username: str, password: str)
     path="/api/token",
     summary="获取访问令牌",
     description="使用用户名和密码获取访问令牌",
-    response_model=Token,
+    response_model=TokenResponse,
     response_description="访问令牌"
 )
 async def login_for_access_token(
     form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
     session: Annotated[AsyncSession, Depends(database.Database.get_session)],
-) -> Token:
+) -> TokenResponse:
     user = await authenticate_user(
         session=session, 
         username=form_data.username, 
@@ -63,10 +68,11 @@ async def login_for_access_token(
             detail="Incorrect username or password",
             headers={"WWW-Authenticate": "Bearer"},
         )
-    access_token_expires = timedelta(hours=1)
     access_token = await create_access_token(
         session=session,
-        data={"sub": form_data.username},
-        expires_delta=access_token_expires
+        data={"sub": user.email},
     )
-    return Token(access_token=access_token, token_type="bearer")
+
+    return TokenResponse(
+        access_token=access_token,
+    )

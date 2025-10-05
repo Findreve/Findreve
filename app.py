@@ -5,18 +5,21 @@ from contextlib import asynccontextmanager
 from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
+
+from pkg.utils import raise_internal_error
 from routes import (session, admin, object)
-import model.database
-import os, asyncio
+from model.database import Database
+import os
 import pkg.conf
 
-# 初始化数据库
-asyncio.run(model.database.Database().init_db())
+from loguru import logger
+
+Router = [admin, session, object]
 
 # Findreve 的生命周期
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    await model.database.Database().init_db()
+    await Database().init_db()
     yield
 
 # 定义 Findreve 服务器
@@ -28,10 +31,22 @@ app = FastAPI(
     lifespan=lifespan
 )
 
+@app.exception_handler(Exception)
+async def handle_unexpected_exceptions(request: Request, exc: Exception):
+    """
+    捕获所有未经处理的异常，防止敏感信息泄露。
+    """
+    # 1. 为开发人员记录详细的、包含完整堆栈跟踪的错误日志
+    logger.exception(
+        f"An unhandled exception occurred for request: {request.method} {request.url.path}"
+    )
+
+    raise_internal_error()
+
+
 # 挂载后端路由
-app.include_router(admin.Router)
-app.include_router(session.Router)
-app.include_router(object.Router)
+for router in Router:
+    app.include_router(router.Router)
 
 # 挂载Slowapi限流中间件
 limiter = Limiter(key_func=get_remote_address)
