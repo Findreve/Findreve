@@ -1,10 +1,11 @@
-from typing import Any, NoReturn, TYPE_CHECKING
+from typing import Any, NoReturn
 
 from fastapi import HTTPException
 
 from starlette.status import (
     HTTP_400_BAD_REQUEST,
     HTTP_401_UNAUTHORIZED,
+    HTTP_402_PAYMENT_REQUIRED,
     HTTP_403_FORBIDDEN,
     HTTP_404_NOT_FOUND,
     HTTP_409_CONFLICT,
@@ -12,12 +13,8 @@ from starlette.status import (
     HTTP_500_INTERNAL_SERVER_ERROR,
     HTTP_501_NOT_IMPLEMENTED,
     HTTP_503_SERVICE_UNAVAILABLE,
-    HTTP_504_GATEWAY_TIMEOUT, HTTP_402_PAYMENT_REQUIRED,
+    HTTP_504_GATEWAY_TIMEOUT, 
 )
-
-if TYPE_CHECKING:
-    from sqlmodel.ext.asyncio.session import AsyncSession
-
 
 # --- Request and Response Helpers ---
 

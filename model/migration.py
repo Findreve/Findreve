@@ -4,9 +4,11 @@ from .user import User, UserTypeEnum
 from pkg import Password
 
 default_settings: list[Setting] = [
-    Setting(type='string', name='version', value='2.0.0'),          # 版本号，用于考虑是否需要数据迁移
-    Setting(type='int', name='jwt_token_exp', value='30'),          # JWT Token 访问令牌
-    Setting(type='string', name='server_chan_key', value=''),       # Server 酱推送密钥
+    Setting(type='string', name='version', value='2.0.0'),              # 版本号，用于考虑是否需要数据迁移
+    Setting(type='int', name='jwt_token_exp', value='30'),              # JWT Token 访问令牌
+    Setting(type='int', name='mentioned_channel', value='wechat_bot'),  # 通知推送通道
+    Setting(type='string', name='server_chan_key', value=''),           # Server 酱推送密钥
+    Setting(type='string', name='wechat_bot_key', value=''),            # 企业微信机器人推送密钥
 ]
 
 async def migration(session):

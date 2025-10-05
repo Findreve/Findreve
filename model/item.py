@@ -1,6 +1,6 @@
 from datetime import datetime
 from enum import StrEnum
-from typing import TYPE_CHECKING, Self, Optional
+from typing import TYPE_CHECKING, Optional
 from uuid import UUID
 
 from sqlmodel import Field, Relationship
@@ -52,12 +52,19 @@ class Item(ItemBase, UUIDTableBase, table=True):
 
     user: 'User' = Relationship(back_populates='items')
 
-    parent_item_id: UUID | None = Field(foreign_key='item.id', ondelete='RESTRICT')
+    parent_item_id: UUID | None = Field(foreign_key='item.id', ondelete='RESTRICT', default=None)
     parent_item: Optional['Item'] = Relationship(back_populates='sub_items', sa_relationship_kwargs={'remote_side': 'Item.id'})
     sub_items: list['Item'] = Relationship(back_populates='parent_item', passive_deletes='all')
 
 class ItemDataUpdateRequest(ItemBase):
-    pass
+    type: ItemTypeEnum | None = None
+    """物品的类型"""
+
+    name: str | None = None
+    """物品名称"""
+
+    status: ItemStatusEnum | None = None
+    """物品状态"""
 
 class ItemDataResponse(ItemBase):
     expires_at: datetime | None = None

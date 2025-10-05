@@ -196,5 +196,6 @@ class UUIDTableBase(TableBase):
     """override"""
 
     @override
+    @classmethod
     async def get_exist_one(cls: Type[T], session: AsyncSession, id: uuid.UUID, load: Union[Relationship, None] = None) -> T:
-        return super().get_exist_one(session, id, load) # type: ignore
+        return await super().get_exist_one(session, id, load)
