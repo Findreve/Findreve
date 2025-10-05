@@ -10,17 +10,17 @@ from pkg import Password
 from loguru import logger
 
 from model.token import Token
-from model import Setting, database
+from model import Setting, User, database
 
 Router = APIRouter(tags=["令牌 session"])
 
 # 创建令牌
-async def create_access_token(data: dict, expires_delta: timedelta | None = None):
+async def create_access_token(session: AsyncSession, data: dict, expires_delta: timedelta | None = None):
     to_encode = data.copy()
     if expires_delta:
         expire = datetime.now(timezone.utc) + expires_delta
     else:
-        expire = datetime.now(timezone.utc) + timedelta(minutes=15)
+        expire = datetime.now(timezone.utc) + timedelta(minutes=await Setting.get(session, 'jwt_token_exp'))
     to_encode.update({"exp": expire})
     encoded_jwt = jwt.encode(to_encode, key=await JWT.get_secret_key(), algorithm='HS256')
     return encoded_jwt
@@ -28,18 +28,17 @@ async def create_access_token(data: dict, expires_delta: timedelta | None = None
 # 验证账号密码
 async def authenticate_user(session: AsyncSession, username: str, password: str):
     # 验证账号和密码
-    account = await Setting.get(session, Setting.name == 'account')
-    stored_password = await Setting.get(session, Setting.name == 'password')
+    account = await User.get(session, User.email == username)
 
-    if not account or not stored_password:
+    if not account:
         logger.error("Account or password not set in settings.")
         return False
 
-    if account.value != username or not Password.verify(stored_password.value, password):
+    if account.email != username or not Password.verify(account.password, password):
         logger.error("Invalid username or password.")
         return False
     
-    return {'is_authenticated': True}
+    return account
 
 # FastAPI 登录路由 / FastAPI login route
 @Router.post(
@@ -66,6 +65,8 @@ async def login_for_access_token(
         )
     access_token_expires = timedelta(hours=1)
     access_token = await create_access_token(
-        data={"sub": form_data.username}, expires_delta=access_token_expires
+        session=session,
+        data={"sub": form_data.username},
+        expires_delta=access_token_expires
     )
     return Token(access_token=access_token, token_type="bearer")
