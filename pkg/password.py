@@ -20,7 +20,8 @@ class Password():
         :rtype: str
         """
         return secrets.token_hex(length)
-    
+
+    @staticmethod
     def hash(
         password: str
     ) -> str:
@@ -34,6 +35,7 @@ class Password():
         """
         return _ph.hash(password)
 
+    @staticmethod
     def verify(
         stored_password: str,
         provided_password: str,

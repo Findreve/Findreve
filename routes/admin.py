@@ -1,12 +1,12 @@
 from typing import Annotated
 
-from fastapi import APIRouter, HTTPException
-from fastapi import Depends
+from fastapi import APIRouter, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from middleware.admin import is_admin
-from model import database, Setting, SettingResponse
+from model import database
 from model.response import DefaultResponse
+from services import admin as admin_service
 
 Router = APIRouter(
     prefix='/api/admin', 
@@ -41,19 +41,7 @@ async def get_settings(
     session: Annotated[AsyncSession, Depends(database.Database.get_session)],
     name: str | None = None
 ) -> DefaultResponse:
-    data = []
-
-    if name:
-        setting = await Setting.get(session, Setting.name == name)
-        if setting:
-            data.append(SettingResponse.model_validate(setting))
-        else:
-            raise HTTPException(404, detail="Setting not found")
-    else:
-        settings = await Setting.get(session, fetch_mode="all")
-        if settings:
-            data = [SettingResponse.model_validate(s) for s in settings]
-
+    data = await admin_service.fetch_settings(session=session, name=name)
     return DefaultResponse(data=data)
 
 
@@ -69,11 +57,5 @@ async def update_settings(
     name: str,
     value: str
 ) -> DefaultResponse:
-    setting = await Setting.get(session, Setting.name == name)
-    if not setting:
-        raise HTTPException(404, detail="Setting not found")
-
-    setting.value = value
-    await Setting.save(session)
-
-    return DefaultResponse(data=True)
+    result = await admin_service.update_setting_value(session=session, name=name, value=value)
+    return DefaultResponse(data=result)
