@@ -4,11 +4,11 @@
 
 from typing import Iterable, List
 
-from fastapi import HTTPException
 from sqlmodel.ext.asyncio.session import AsyncSession
 
 from model import Setting
 from model import SettingResponse
+from pkg import utils
 
 
 async def fetch_settings(
@@ -25,7 +25,7 @@ async def fetch_settings(
         if setting:
             data.append(SettingResponse.model_validate(setting))
         else:
-            raise HTTPException(404, detail="Setting not found")
+            utils.raise_not_found("Setting not found")
     else:
         settings: Iterable[Setting] | None = await Setting.get(session, fetch_mode="all")
         if settings:
@@ -44,7 +44,7 @@ async def update_setting_value(
     """
     setting = await Setting.get(session, Setting.name == name)
     if not setting:
-        raise HTTPException(404, detail="Setting not found")
+        utils.raise_not_found("Setting not found")
 
     setting.value = value
     await Setting.save(session)

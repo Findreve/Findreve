@@ -5,15 +5,14 @@
 from typing import List
 from uuid import UUID
 
-from fastapi import HTTPException
+from fastapi import status
 from loguru import logger
 from sqlmodel.ext.asyncio.session import AsyncSession
 
 from model import Item, ItemDataResponse, Setting, User
 from model.item import ItemDataUpdateRequest, ItemTypeEnum
 from pkg.sender import ServerChatBot, WeChatBot
-from pkg.utils import raise_bad_request, raise_internal_error, raise_not_found
-from starlette.status import HTTP_204_NO_CONTENT
+from pkg import utils
 
 
 async def list_items(
@@ -72,7 +71,7 @@ async def create_item(
         await Item.add(session, Item.model_validate(request_dict))
     except Exception as exc:  # noqa: BLE001
         logger.error(f"Failed to add item: {exc}")
-        raise HTTPException(status_code=500, detail=str(exc)) from exc
+        utils.raise_internal_error(str(exc))
 
 
 async def update_item(
@@ -86,7 +85,7 @@ async def update_item(
     """
     obj = await Item.get(session, (Item.id == item_id) & (Item.user_id == user.id))
     if not obj:
-        raise_not_found("Item not found or access denied")
+        utils.raise_not_found("Item not found or access denied")
 
     await obj.update(session, request, exclude_unset=True)
 
@@ -101,7 +100,7 @@ async def delete_item(
     """
     obj = await Item.get(session, (Item.id == item_id) & (Item.user_id == user.id))
     if not obj:
-        raise_not_found("Item not found or access denied")
+        utils.raise_not_found("Item not found or access denied")
     await Item.delete(session, obj)
 
 
@@ -116,7 +115,7 @@ async def retrieve_object(
     object_data = await Item.get(session, Item.id == item_id)
 
     if not object_data:
-        raise_not_found("物品不存在或出现异常")
+        utils.raise_not_found("物品不存在或出现异常")
 
     if object_data.status == "lost":
         object_data.find_ip = client_host
@@ -136,12 +135,12 @@ async def notify_move_car(
     item_data = await Item.get_exist_one(session=session, id=item_id)
 
     if item_data.type != ItemTypeEnum.car:
-        raise_bad_request("Item is not car")
+        utils.raise_bad_request("Item is not car")
 
     server_chan_key = await Setting.get(session, Setting.name == "server_chan_key")
     wechat_bot_key = await Setting.get(session, Setting.name == "wechat_bot_key")
     if not (server_chan_key.value or wechat_bot_key.value):
-        raise_internal_error("未配置Server酱，无法发送挪车通知")
+        utils.raise_internal_error("未配置Server酱，无法发送挪车通知")
 
     title = "挪车通知 - Findreve"
     description = (
@@ -161,4 +160,4 @@ async def notify_move_car(
             version="v1",
         )
 
-    return HTTP_204_NO_CONTENT
+    return status.HTTP_204_NO_CONTENT

@@ -2,7 +2,6 @@ from datetime import datetime
 from enum import StrEnum
 from typing import TYPE_CHECKING, Optional
 from uuid import UUID
-
 from sqlmodel import Field, Relationship
 
 from .base import SQLModelBase, UUIDTableBase

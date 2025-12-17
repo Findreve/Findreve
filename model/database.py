@@ -3,7 +3,6 @@ from contextlib import asynccontextmanager
 from typing import AsyncGenerator
 import os
 from dotenv import load_dotenv
-
 from sqlalchemy.ext.asyncio import AsyncEngine, create_async_engine
 from sqlalchemy.orm import sessionmaker
 from sqlmodel import SQLModel

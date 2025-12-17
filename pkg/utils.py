@@ -16,7 +16,7 @@ from starlette.status import (
     HTTP_504_GATEWAY_TIMEOUT, 
 )
 
-# --- Request and Response Helpers ---
+# --- 400 ---
 
 def ensure_request_param(to_check: Any, detail: str) -> None:
     """
@@ -30,21 +30,21 @@ def raise_bad_request(detail: str = '') -> NoReturn:
     """Raises an HTTP 400 Bad Request exception."""
     raise HTTPException(status_code=HTTP_400_BAD_REQUEST, detail=detail)
 
-def raise_not_found(detail: str) -> NoReturn:
-    """Raises an HTTP 404 Not Found exception."""
-    raise HTTPException(status_code=HTTP_404_NOT_FOUND, detail=detail)
+def raise_unauthorized(detail: str) -> NoReturn:
+    """Raises an HTTP 401 Unauthorized exception."""
+    raise HTTPException(status_code=HTTP_401_UNAUTHORIZED, detail=detail)
 
-def raise_internal_error(detail: str = "服务器出现故障，请稍后再试或联系管理员") -> NoReturn:
-    """Raises an HTTP 500 Internal Server Error exception."""
-    raise HTTPException(status_code=HTTP_500_INTERNAL_SERVER_ERROR, detail=detail)
+def raise_insufficient_quota(detail: str = "积分不足，请充值") -> NoReturn:
+    """Raises an HTTP 402 Payment Required exception."""
+    raise HTTPException(status_code=HTTP_402_PAYMENT_REQUIRED, detail=detail)
 
 def raise_forbidden(detail: str) -> NoReturn:
     """Raises an HTTP 403 Forbidden exception."""
     raise HTTPException(status_code=HTTP_403_FORBIDDEN, detail=detail)
 
-def raise_unauthorized(detail: str) -> NoReturn:
-    """Raises an HTTP 401 Unauthorized exception."""
-    raise HTTPException(status_code=HTTP_401_UNAUTHORIZED, detail=detail)
+def raise_not_found(detail: str) -> NoReturn:
+    """Raises an HTTP 404 Not Found exception."""
+    raise HTTPException(status_code=HTTP_404_NOT_FOUND, detail=detail)
 
 def raise_conflict(detail: str) -> NoReturn:
     """Raises an HTTP 409 Conflict exception."""
@@ -53,6 +53,12 @@ def raise_conflict(detail: str) -> NoReturn:
 def raise_too_many_requests(detail: str) -> NoReturn:
     """Raises an HTTP 429 Too Many Requests exception."""
     raise HTTPException(status_code=HTTP_429_TOO_MANY_REQUESTS, detail=detail)
+
+# --- 500 ---
+
+def raise_internal_error(detail: str = "服务器出现故障，请稍后再试或联系管理员") -> NoReturn:
+    """Raises an HTTP 500 Internal Server Error exception."""
+    raise HTTPException(status_code=HTTP_500_INTERNAL_SERVER_ERROR, detail=detail)
 
 def raise_not_implemented(detail: str = "尚未支持这种方法") -> NoReturn:
     """Raises an HTTP 501 Not Implemented exception."""
@@ -65,8 +71,3 @@ def raise_service_unavailable(detail: str) -> NoReturn:
 def raise_gateway_timeout(detail: str) -> NoReturn:
     """Raises an HTTP 504 Gateway Timeout exception."""
     raise HTTPException(status_code=HTTP_504_GATEWAY_TIMEOUT, detail=detail)
-
-def raise_insufficient_quota(detail: str = "积分不足，请充值") -> NoReturn:
-    raise HTTPException(status_code=HTTP_402_PAYMENT_REQUIRED, detail=detail)
-
-# --- End of Request and Response Helpers ---

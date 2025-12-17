@@ -1,13 +1,13 @@
 # 导入库
 from typing import Annotated
-
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlmodel.ext.asyncio.session import AsyncSession
 
 from model import database
 from model.response import TokenResponse
 from services import session as session_service
+from pkg import utils
 
 Router = APIRouter(tags=["令牌 session"])
 
@@ -29,10 +29,6 @@ async def login_for_access_token(
         password=form_data.password,
     )
     if not token_response:
-        raise HTTPException(
-            status_code=401,
-            detail="Incorrect username or password",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
+        utils.raise_unauthorized("Incorrect username or password")
 
     return token_response

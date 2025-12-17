@@ -23,8 +23,8 @@ class User(UserBase, UUIDTableBase, table=True):
     email: EmailStr = Field(index=True, unique=True)
     """邮箱"""
 
-    username: str = Field(index=True, unique=True)
-    """用户名"""
+    nickname: str
+    """昵称"""
 
     password: str
     """Argon2算法哈希后的密码"""

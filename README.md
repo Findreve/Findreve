@@ -61,18 +61,16 @@ chmod +x ./findreve
 
 启动后， Findreve 会在程序的根目录自动创建 SQLite 数据库，并在
 终端显示管理员账号密码。请注意，账号密码仅显示一次，请注意保管。
-账号默认为 `admin@yuxiaoqiu.cn`
+账号默认为 `admin@yxqi.cn`
 
 Upon launch, Findreve will create a SQLite database in the project's root directory and
 display the administrator's account and password in the console.
 
 ## 构建
 
-> 当前版本的 Findreve Core 无法正常工作，因为我们正在尝试[重构数据库组件以使用ORM](https://github.com/Findreve/Findreve/issues/8)
+你需要安装Python 3.13 以上的版本。然后，clone 本仓库到您的服务器并解压，然后安装下面的依赖：
 
-你需要安装Python 3.8 以上的版本。然后，clone 本仓库到您的服务器并解压，然后安装下面的依赖：
-
-You need to have Python 3.8 or higher installed on your server. Then, clone this repository
+You need to have Python 3.13 or higher installed on your server. Then, clone this repository
 to your server and install the required dependencies:
 
 > `pip install -r requirements.txt`
