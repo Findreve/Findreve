@@ -56,14 +56,14 @@ class Database:
         提供异步上下文管理器用于直接获取数据库会话
         
         使用示例:
-            async with Database.session_context() as session:
+        >>> async with Database.session_context() as session:
                 # 执行数据库操作
                 pass
         """
         async with _async_session_factory() as session:
             yield session
 
-    async def init_db(self, url: str = ASYNC_DATABASE_URL):
+    async def init_db(self):
         """创建数据库结构"""
         async with engine.begin() as conn:
             await conn.run_sync(SQLModel.metadata.create_all)

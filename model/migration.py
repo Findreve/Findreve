@@ -45,7 +45,7 @@ async def migration(session):
 
         admin_user = User(
             email='admin@yxqi.cn',
-            username='Admin',
+            nickname='Admin',
             password=Password.hash(admin_password),
             role=UserTypeEnum.super_admin,
             _initializing=True

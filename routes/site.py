@@ -1,6 +1,5 @@
 from fastapi import APIRouter
 from model.response import DefaultResponse
-from services import site as site_service
 
 Router = APIRouter(prefix='/api/site', tags=['站点 Site'])
 
@@ -17,5 +16,4 @@ async def ping():
 
     :return: Findreve 版本号
     """
-    version = await site_service.get_version()
-    return DefaultResponse(data=version)
+    return DefaultResponse(data='pong')

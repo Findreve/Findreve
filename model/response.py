@@ -14,7 +14,7 @@ class ResponseBase(BaseModel):
 """
 class DefaultResponse(BaseModel):
     code: int = 0
-    data: dict | list | bool | SQLModelBase | None = None
+    data: str | dict | list | bool | SQLModelBase | None = None
     msg: str = ""
 
 # FastAPI 鉴权返回模型
