@@ -1,0 +1,15 @@
+[project]
+name = "findreve"
+version = "2.0.0"
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "aiohttp>=3.13.2",
+    "aiosqlite>=0.22.0",
+    "argon2-cffi>=25.1.0",
+    "fastapi[standard]>=0.124.4",
+    "loguru>=0.7.3",
+    "pyjwt>=2.10.1",
+    "slowapi>=0.1.9",
+    "sqlmodel>=0.0.27",
+]
